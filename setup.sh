@@ -59,13 +59,21 @@ fi
 # 3. Create Virtual Environment
 echo -e "\n${BLUE}[3/5] Setting up Python virtual environment...${NC}"
 VENV_DIR="venv"
-if [ ! -f "$VENV_DIR/bin/activate" ]; then
-    echo -e "Creating virtual environment in ${CYAN}${VENV_DIR}${NC}..."
-    # If directory exists but activate script is missing, remove it first
-    if [ -d "$VENV_DIR" ]; then
-        echo -e "${YELLOW}ℹ Removing incomplete/broken virtual environment directory...${NC}"
-        rm -rf "$VENV_DIR"
+
+VENV_HEALTHY=true
+if [ -f "$VENV_DIR/bin/activate" ]; then
+    # Verify that the virtual environment's pip is functional and not pointing to a stale path
+    if ! "$VENV_DIR/bin/pip" --version >/dev/null 2>&1; then
+        VENV_HEALTHY=false
+        echo -e "${YELLOW}ℹ Virtual environment is broken or relocated (likely due to project directory rename). Recreating...${NC}"
     fi
+else
+    VENV_HEALTHY=false
+fi
+
+if [ "$VENV_HEALTHY" = false ]; then
+    echo -e "Creating virtual environment in ${CYAN}${VENV_DIR}${NC}..."
+    rm -rf "$VENV_DIR"
     python3 -m venv "$VENV_DIR"
     echo -e "${GREEN}✓ Virtual environment created.${NC}"
 else

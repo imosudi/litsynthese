@@ -26,7 +26,7 @@ An automated academic paper ingestion, critique, and summarisation tool designed
   * **Gemini 2.5 Flash** (via the native `google-genai` SDK)
   * **LLaMA 3.1 (8B & 70B)** (via Groq API or OpenRouter API)
   * **Qwen 2.5 (72B)** (via OpenRouter API)
-  * **Gemma 2 (9B)** (via OpenRouter API)
+  * **Gemma 4 (31B)** (via OpenRouter API)
 * **Structured Synthesis:** Generates a 6-aspect academic evaluation utilizing the selected LLM:
   * **Executive Synopsis:** High-level problem statement, target application, and final outcomes.
   * **Key Contributions:** List of novel designs, proofs, algorithms, or experimental discoveries.
