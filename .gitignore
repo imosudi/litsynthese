@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Application dynamic data (projects, uploads, reviews, summaries)
+data/
+
+# Environments and Secrets
+.env
+venv/
+
