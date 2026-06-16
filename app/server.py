@@ -6,21 +6,22 @@ import shutil
 import time
 from typing import List, Dict, Any
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+import config
 from app.parser import AcademicPaperParser
 from app.llm import AcademicLLMService
 
 # Setup logger
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("review_n_summary.main")
+logger = logging.getLogger("litsynthese.server")
 
-app = FastAPI(title="review_n_summary API", version="1.0.0")
+app = FastAPI(title="LitSynthese API", version="1.0.0")
 
 # Base directory for all projects
-PROJECTS_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "projects"))
+PROJECTS_BASE_DIR = config.PROJECTS_BASE_DIR
 os.makedirs(PROJECTS_BASE_DIR, exist_ok=True)
 
 # Initialise LLM Service
@@ -34,6 +35,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     query: str
     history: List[ChatMessage]
+    model: str = "gemini-2.5-flash"
 
 class ProjectCreate(BaseModel):
     name: str
@@ -47,8 +49,10 @@ def migrate_existing_data():
     default_uploads = os.path.join(default_dir, "uploads")
     default_processed = os.path.join(default_dir, "processed")
     
-    legacy_uploads = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "uploads"))
-    legacy_processed = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "processed"))
+    # Legacy data is in root data/ relative to project root
+    base_data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+    legacy_uploads = os.path.join(base_data_dir, "uploads")
+    legacy_processed = os.path.join(base_data_dir, "processed")
     
     os.makedirs(default_uploads, exist_ok=True)
     os.makedirs(default_processed, exist_ok=True)
@@ -114,10 +118,14 @@ def get_project_dirs(project_id: str) -> tuple[str, str]:
     
     return uploads_dir, processed_dir
 
-@app.get("/")
-async def root_redirect():
-    """Redirect root access to static index.html."""
-    return RedirectResponse(url="/static/index.html")
+@app.get("/", response_class=HTMLResponse)
+async def serve_index():
+    """Serve index.html directly from templates/ folder."""
+    template_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "templates", "index.html"))
+    if not os.path.exists(template_path):
+        raise HTTPException(status_code=404, detail="index.html template not found.")
+    with open(template_path, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
 
 # Project management endpoints
 @app.get("/api/projects")
@@ -187,7 +195,7 @@ async def delete_project(project_id: str):
 
 # Isolated paper endpoints
 @app.post("/api/project/{project_id}/upload")
-async def upload_paper(project_id: str, file: UploadFile = File(...)):
+async def upload_paper(project_id: str, model: str = "gemini-2.5-flash", file: UploadFile = File(...)):
     """Receives PDF file, parses sections, generates LLM summary, caches, and returns analysis ID."""
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
@@ -220,7 +228,8 @@ async def upload_paper(project_id: str, file: UploadFile = File(...)):
         analysis = llm_service.analyse_paper(
             title=parsed_data["metadata"]["title"],
             authors=parsed_data["metadata"]["authors"],
-            full_text=full_text
+            full_text=full_text,
+            model=model
         )
         
         # Combine parsed structure + summary analysis
@@ -307,7 +316,8 @@ async def chat_paper(project_id: str, paper_id: str, request: ChatRequest):
         title=data["metadata"]["title"],
         sections=data["sections"],
         chat_history=history_dicts,
-        query=request.query
+        query=request.query,
+        model=request.model
     )
     
     return {"reply": reply}
@@ -366,7 +376,7 @@ async def export_paper_summary(project_id: str, paper_id: str):
 {chr(10).join(f"* {f}" for f in analysis.get('future_work', []))}
 
 ---
-Generated automatically by review_n_summary.
+Generated automatically by LitSynthese.
 """
     clean_title = "".join(c for c in meta["title"] if c.isalnum() or c in (" ", "_", "-")).rstrip()
     clean_title = clean_title.replace(" ", "_")[:50]

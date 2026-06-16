@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const state = {
         projects: [],
         selectedProjectId: localStorage.getItem("selectedProjectId") || "default",
+        selectedModelId: localStorage.getItem("selectedModelId") || "gemini-2.5-flash",
         papers: [],
         selectedPaper: null,
         chatHistories: {}, // Map of paperId -> chatMessages
@@ -13,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const projectSelect = document.getElementById("project-select");
     const newProjectBtn = document.getElementById("new-project-btn");
     const deleteProjectBtn = document.getElementById("delete-project-btn");
+    const modelSelect = document.getElementById("model-select");
 
     const dropZone = document.getElementById("drop-zone");
     const fileInput = document.getElementById("file-input");
@@ -186,6 +188,14 @@ document.addEventListener("DOMContentLoaded", () => {
         fetchPapersList();
     });
 
+    if (modelSelect) {
+        modelSelect.value = state.selectedModelId;
+        modelSelect.addEventListener("change", (e) => {
+            state.selectedModelId = e.target.value;
+            localStorage.setItem("selectedModelId", state.selectedModelId);
+        });
+    }
+
     // 1. Ingestion / Upload Event Listeners
     dropZone.addEventListener("click", () => fileInput.click());
 
@@ -231,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
         progressStatus.textContent = "Uploading PDF...";
 
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", `/api/project/${state.selectedProjectId}/upload`, true);
+        xhr.open("POST", `/api/project/${state.selectedProjectId}/upload?model=${state.selectedModelId}`, true);
 
         // Track upload progress
         xhr.upload.addEventListener("progress", (e) => {
@@ -239,7 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const percent = Math.round((e.loaded / e.total) * 100);
                 progressBar.style.width = `${percent}%`;
                 if (percent === 100) {
-                    progressStatus.textContent = "Analysing Paper with Gemini API...";
+                    progressStatus.textContent = `Analysing Paper with LLM (${state.selectedModelId})...`;
                 } else {
                     progressStatus.textContent = `Uploading PDF (${percent}%)...`;
                 }
@@ -504,7 +514,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 body: JSON.stringify({
                     query: query,
-                    history: state.chatHistories[paperId].slice(0, -1)
+                    history: state.chatHistories[paperId].slice(0, -1),
+                    model: state.selectedModelId
                 })
             });
             

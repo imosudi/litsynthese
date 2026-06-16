@@ -12,7 +12,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Colour
 
 echo -e "${BLUE}=====================================================${NC}"
-echo -e "${CYAN}      review_n_summary Development Setup Script      ${NC}"
+echo -e "${CYAN}      LitSynthese Development Setup Script      ${NC}"
 echo -e "${BLUE}=====================================================${NC}"
 
 # Function to check command existence
@@ -108,13 +108,13 @@ else
 fi
 
 echo -e "\n${GREEN}=====================================================${NC}"
-echo -e "${GREEN}       Setup Complete! Ready to run review_n_summary  ${NC}"
+echo -e "${GREEN}       Setup Complete! Ready to run LitSynthese  ${NC}"
 echo -e "${GREEN}=====================================================${NC}"
 echo -e "\nTo start the application, run:"
-echo -e "  ${CYAN}source venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0${NC}"
+echo -e "  ${CYAN}source venv/bin/activate && python3 main.py${NC}"
 echo -e "\nWould you like to start the server now? (y/N)"
 read -r start_server
 if [[ "$start_server" =~ ^[Yy]$ ]]; then
-    echo -e "${BLUE}Starting Uvicorn server...${NC}"
-    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    echo -e "${BLUE}Starting application server...${NC}"
+    python3 main.py
 fi

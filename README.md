@@ -1,4 +1,4 @@
-# review_n_summary
+# LitSynthese
 
 An automated academic paper ingestion, critique, and summarisation tool designed for researchers and students. It combines custom heuristic PDF parsing, citation bibliography linking, structured multi-aspect LLM analysis (powered by Gemini API), and an interactive context-grounded chat room.
 
@@ -53,7 +53,7 @@ If you choose not to start the server automatically during setup, you can launch
 source venv/bin/activate
 
 # Launch the FastAPI web server
-uvicorn app.main:app --reload --host 0.0.0.0
+python3 main.py
 ```
 
 Open your browser and navigate to:
@@ -64,10 +64,13 @@ Open your browser and navigate to:
 ## Codebase Structure
 * `setup.sh` - Interactive script to manage dependencies, pip virtualenv, and config.
 * `requirements.txt` - Project dependencies list.
-* `app/main.py` - FastAPI application entrypoint, routes, uploads management, and report export.
+* `main.py` - Root entrypoint script that imports and runs the application server.
+* `config.py` - Central application configuration parameters.
+* `app/server.py` - FastAPI application initialisation, endpoints, and file management.
 * `app/parser.py` - Academic paper text segmentation and citation-to-references mapping.
 * `app/llm.py` - Gemini API SDK connector, structured response generation, and RAG search.
-* `app/static/` - Single Page Application files.
-  * `index.html` - Dashboard layout with sub-section panes and SVGs.
+* `app/static/` - CSS, client-side JS, and image assets.
   * `styles.css` - Theme styles, glassmorphic card variables, and smooth animations.
   * `app.js` - Dynamic DOM controller, file uploader, and state machine.
+* `app/templates/` - HTML templates.
+  * `index.html` - Dashboard layout with sub-section panes and SVGs.

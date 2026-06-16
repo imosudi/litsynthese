@@ -128,7 +128,7 @@ body {
 
 /* Project Selector Styles */
 .project-selector-section {
-    margin-bottom: 24px;
+    margin-bottom: 18px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -170,6 +170,51 @@ body {
     background: var(--bg-secondary);
     color: var(--text-primary);
 }
+
+.model-selector-section {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.model-selector-section label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.model-select-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.model-select-dropdown {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.model-select-dropdown:hover, .model-select-dropdown:focus {
+    border-color: var(--accent-color);
+    background: var(--card-hover);
+}
+
+.model-select-dropdown option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
 
 .project-action-btn {
     background: var(--card-bg);

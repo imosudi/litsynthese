@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Setup logger
-logger = logging.getLogger("review_n_summary.llm")
+logger = logging.getLogger("litsynthese.llm")
 
 # Define schema for structured paper analysis
 class PaperAnalysis(BaseModel):
@@ -49,12 +49,17 @@ class AcademicLLMService:
     def is_mock_mode(self) -> bool:
         return self.client is None
 
-    def analyse_paper(self, title: str, authors: str, full_text: str) -> Dict[str, Any]:
+    def analyse_paper(self, title: str, authors: str, full_text: str, model: str = "gemini-2.5-flash") -> Dict[str, Any]:
         """Generates a structured PhD-level analysis of the academic paper."""
-        if self.is_mock_mode():
-            return self._generate_mock_analysis(title, authors)
-            
-        prompt = f"""
+        model = model.strip()
+        
+        # 1. Gemini Client path
+        if model == "gemini-2.5-flash":
+            if self.is_mock_mode():
+                logger.warning("Gemini Client is in Mock Mode. Falling back to mock analysis.")
+                return self._generate_mock_analysis(title, authors)
+                
+            prompt = f"""
 You are an expert PhD academic reviewer. Analyse the following research paper:
 Title: {title}
 Authors: {authors}
@@ -64,53 +69,126 @@ Paper Text Content:
 
 Provide a comprehensive, high-quality critique and summary. Focus on technical rigor and avoid superficial summaries.
 """
-        try:
-            response = self.client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=PaperAnalysis,
-                    temperature=0.2
+            try:
+                response = self.client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=PaperAnalysis,
+                        temperature=0.2
+                    )
                 )
-            )
-            # Parse the JSON response
-            return json.loads(response.text)
+                return json.loads(response.text)
+            except Exception as e:
+                logger.error(f"Error during Gemini paper analysis: {e}")
+                return self._generate_mock_analysis(title, authors)
+                
+        # 2. External API provider path (Groq / OpenRouter)
+        import httpx
+        url = ""
+        headers = {}
+        api_key = ""
+        actual_model = ""
+        
+        if model.startswith("groq/"):
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            api_key = os.getenv("GROQ_API_KEY")
+            actual_model = model.replace("groq/", "")
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+        elif model.startswith("openrouter/"):
+            url = "https://openrouter.ai/api/v1/chat/completions"
+            api_key = os.getenv("OPENROUTER_API_KEY")
+            actual_model = model.replace("openrouter/", "")
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://mioemi.com",
+                "X-Title": "LitSynthese"
+            }
+            
+        if not api_key:
+            logger.warning(f"API key missing for model {model}. Falling back to mock analysis.")
+            return self._generate_mock_analysis(title, authors)
+            
+        schema_instruction = """
+You must return a valid JSON object matching the following structure:
+{
+  "synopsis": "A detailed executive summary explaining the core research question, context, and high-level findings.",
+  "contributions": ["Contribution 1", "Contribution 2", "Contribution 3"],
+  "methodology": "A detailed description of the experimental methodology, systems design, models, formulas, or dataset details.",
+  "critical_review": ["Critique 1", "Critique 2", "Critique 3"],
+  "future_work": ["Future Area 1", "Future Area 2"],
+  "keywords": ["Keyword1", "Keyword2", "Keyword3"]
+}
+"""
+        payload = {
+            "model": actual_model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": f"You are an expert PhD academic reviewer. {schema_instruction}\nYou must respond with only a valid JSON object matching the schema, with no markdown code blocks, introductory text, or concluding text."
+                },
+                {
+                    "role": "user",
+                    "content": f"Analyse this research paper:\nTitle: {title}\nAuthors: {authors}\n\nContent:\n{full_text[:45000]}"
+                }
+            ],
+            "temperature": 0.2,
+            "response_format": {"type": "json_object"}
+        }
+        
+        try:
+            logger.info(f"Sending analysis request to {model} API ({actual_model})...")
+            res = httpx.post(url, headers=headers, json=payload, timeout=60.0)
+            if res.status_code == 200:
+                resp_data = res.json()
+                content = resp_data["choices"][0]["message"]["content"]
+                content_clean = content.strip()
+                if content_clean.startswith("```"):
+                    start = content_clean.find("{")
+                    end = content_clean.rfind("}")
+                    if start != -1 and end != -1:
+                        content_clean = content_clean[start:end+1]
+                return json.loads(content_clean)
+            else:
+                logger.error(f"API call to {model} failed with status {res.status_code}: {res.text}")
+                return self._generate_mock_analysis(title, authors)
         except Exception as e:
-            logger.error(f"Error during Gemini paper analysis: {e}")
-            # Fallback to mock on error
+            logger.error(f"Error during API call to {model}: {e}")
             return self._generate_mock_analysis(title, authors)
 
-    def chat_about_paper(self, title: str, sections: Dict[str, Any], chat_history: List[Dict[str, str]], query: str) -> str:
+    def chat_about_paper(self, title: str, sections: Dict[str, Any], chat_history: List[Dict[str, str]], query: str, model: str = "gemini-2.5-flash") -> str:
         """Answers user query about the paper using context-grounded retrieval."""
-        if self.is_mock_mode():
-            return self._generate_mock_chat_reply(title, query)
-            
+        model = model.strip()
+        
         # Build context from relevant sections
-        # To avoid exceeding tokens, we find the most relevant sections based on keyword matching
         relevant_text = ""
         query_words = set(query.lower().split())
-        
         scored_sections = []
         for sect_name, sect_data in sections.items():
             sect_text = sect_data.get("text", "")
-            # Simple keyword overlap scoring
             score = sum(1 for w in query_words if w in sect_text.lower())
             scored_sections.append((score, sect_name, sect_text))
             
-        # Sort by score descending and take top 3 sections
         scored_sections.sort(reverse=True, key=lambda x: x[0])
-        
         for score, name, text in scored_sections[:3]:
             relevant_text += f"\n--- Section: {name.replace('_', ' ').title()} ---\n{text[:15000]}\n"
-            
-        # Build chat history context
-        formatted_history = ""
-        for msg in chat_history:
-            role = "User" if msg["role"] == "user" else "Assistant"
-            formatted_history += f"{role}: {msg['content']}\n"
-            
-        prompt = f"""
+
+        # 1. Gemini Client path
+        if model == "gemini-2.5-flash":
+            if self.is_mock_mode():
+                return self._generate_mock_chat_reply(title, query)
+                
+            formatted_history = ""
+            for msg in chat_history:
+                role = "User" if msg["role"] == "user" else "Assistant"
+                formatted_history += f"{role}: {msg['content']}\n"
+                
+            prompt = f"""
 You are an intelligent research assistant specialising in analysing academic papers. 
 You are discussing the paper: "{title}".
 
@@ -126,18 +204,80 @@ Answer the query accurately, objectively, and technically based ONLY on the prov
 If the paper text does not contain enough information to answer the question, state that clearly.
 Do not hallucinate facts. Cite specific section names (e.g., "[Methodology]", "[Introduction]") in your answer where appropriate.
 """
-        try:
-            response = self.client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.3
+            try:
+                response = self.client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.3
+                    )
                 )
-            )
-            return response.text
+                return response.text
+            except Exception as e:
+                logger.error(f"Error in Gemini chat: {e}")
+                return f"An error occurred while connecting to the LLM: {str(e)}"
+                
+        # 2. External API provider path (Groq / OpenRouter)
+        import httpx
+        url = ""
+        headers = {}
+        api_key = ""
+        actual_model = ""
+        
+        if model.startswith("groq/"):
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            api_key = os.getenv("GROQ_API_KEY")
+            actual_model = model.replace("groq/", "")
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+        elif model.startswith("openrouter/"):
+            url = "https://openrouter.ai/v1/chat/completions"
+            api_key = os.getenv("OPENROUTER_API_KEY")
+            actual_model = model.replace("openrouter/", "")
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://mioemi.com",
+                "X-Title": "LitSynthese"
+            }
+            
+        if not api_key:
+            logger.warning(f"API key missing for model {model}. Falling back to mock chat.")
+            return self._generate_mock_chat_reply(title, query)
+            
+        messages = [
+            {
+                "role": "system",
+                "content": f"You are an intelligent research assistant specialising in analysing academic papers. You are discussing the paper: \"{title}\".\n\nBelow is the relevant context extracted from the paper:\n{relevant_text}\n\nAnswer the query accurately, objectively, and technically based ONLY on the provided paper context. Cite specific section names (e.g., [Methodology]) in your answer where appropriate. If the paper text does not contain enough information to answer, state that clearly."
+            }
+        ]
+        
+        for msg in chat_history:
+            role = "user" if msg["role"] == "user" else "assistant"
+            messages.append({"role": role, "content": msg["content"]})
+            
+        messages.append({"role": "user", "content": query})
+        
+        payload = {
+            "model": actual_model,
+            "messages": messages,
+            "temperature": 0.3
+        }
+        
+        try:
+            logger.info(f"Sending chat query to {model} API ({actual_model})...")
+            res = httpx.post(url, headers=headers, json=payload, timeout=60.0)
+            if res.status_code == 200:
+                resp_data = res.json()
+                return resp_data["choices"][0]["message"]["content"]
+            else:
+                logger.error(f"API chat call to {model} failed with status {res.status_code}: {res.text}")
+                return f"An error occurred while connecting to the LLM provider: API returned status {res.status_code}."
         except Exception as e:
-            logger.error(f"Error in Gemini chat: {e}")
-            return f"An error occurred while connecting to the LLM: {str(e)}"
+            logger.error(f"Error during API chat call to {model}: {e}")
+            return f"An error occurred while connecting to the LLM provider: {str(e)}"
 
     def _generate_mock_analysis(self, title: str, authors: str) -> Dict[str, Any]:
         """Generates domain-aware placeholder content if Gemini API is unavailable."""
