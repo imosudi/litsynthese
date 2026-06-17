@@ -8,44 +8,40 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="/static/styles.css">
-    <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous" defer></script>
     <!-- Application Logic -->
     <script src="/static/app.js" defer></script>
 </head>
 <body>
-    <div class="app-container d-flex">
+    <div class="app-container">
         <!-- Sidebar Navigation -->
-        <aside class="sidebar d-flex flex-column p-4">
-            <div class="brand d-flex align-items-center gap-3 mb-4">
-                <div class="logo-icon d-flex align-items-center justify-content-center">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                         <path d="M12 5v6M9 8h6" opacity="0.9"></path>
                     </svg>
                 </div>
-                <h1 class="m-0">LitSynthese</h1>
+                <h1>LitSynthese</h1>
             </div>
 
             <!-- Project Selector -->
-            <div class="project-selector-section d-flex flex-column gap-2 mb-3">
-                <label for="project-select" class="text-uppercase fw-bold text-secondary">Active Project</label>
-                <div class="project-select-wrapper d-flex gap-2 align-items-center">
-                    <select id="project-select" class="form-select project-select-dropdown">
+            <div class="project-selector-section">
+                <label for="project-select">Active Project</label>
+                <div class="project-select-wrapper">
+                    <select id="project-select" class="project-select-dropdown">
                         <!-- Loaded dynamically -->
                     </select>
-                    <button id="new-project-btn" class="btn project-action-btn d-flex align-items-center justify-content-center" title="Create New Project">
+                    <button id="new-project-btn" class="project-action-btn" title="Create New Project">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                     </button>
-                    <button id="delete-project-btn" class="btn project-action-btn delete d-flex align-items-center justify-content-center" title="Delete Active Project">
+                    <button id="delete-project-btn" class="project-action-btn delete" title="Delete Active Project">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -55,10 +51,10 @@
             </div>
 
             <!-- Model Selector -->
-            <div class="model-selector-section d-flex flex-column gap-2 mb-4">
-                <label for="model-select" class="text-uppercase fw-bold text-secondary">Synthesis & Chat Model</label>
-                <div class="model-select-wrapper d-flex gap-2 align-items-center">
-                    <select id="model-select" class="form-select model-select-dropdown">
+            <div class="model-selector-section">
+                <label for="model-select">Synthesis & Chat Model</label>
+                <div class="model-select-wrapper">
+                    <select id="model-select" class="model-select-dropdown">
                         <option value="gemini-2.5-flash">Gemini 2.5 Flash (Default)</option>
                         <option value="groq/llama-3.1-8b-instant">LLaMA 3.1 8B (Groq)</option>
                         <option value="groq/llama-3.1-70b-versatile">LLaMA 3.1 70B (Groq)</option>
@@ -71,39 +67,39 @@
             </div>
 
             <!-- Upload Area -->
-            <div class="upload-section mb-4">
+            <div class="upload-section">
                 <div class="drop-zone" id="drop-zone">
-                    <svg class="upload-icon mb-2" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="upload-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M17 8L12 3L7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M12 3V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <p class="drop-text m-0 mb-2">Drag & drop paper PDF</p>
+                    <p class="drop-text">Drag & drop paper PDF</p>
                     <span class="browse-btn">Browse files</span>
                     <input type="file" id="file-input" accept="application/pdf" hidden>
                 </div>
                 <!-- Progress Indicator -->
-                <div class="progress-container hidden mt-3" id="progress-container">
-                    <div class="progress mb-2" style="height: 6px;">
-                        <div class="progress-bar" role="progressbar" id="progress-bar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-container hidden" id="progress-container">
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" id="progress-bar"></div>
                     </div>
-                    <span class="progress-status d-block text-center text-secondary" id="progress-status">Uploading...</span>
+                    <span class="progress-status" id="progress-status">Uploading...</span>
                 </div>
             </div>
 
             <!-- Ingested Papers List -->
-            <div class="papers-list-section d-flex flex-column flex-grow-1 overflow-hidden">
-                <h2 class="text-uppercase fw-bold text-secondary">Parsed Literature</h2>
-                <div class="papers-list d-flex flex-column gap-2 overflow-y-auto pe-1" id="papers-list">
-                    <div class="empty-list-state text-center text-secondary py-4">No papers uploaded yet</div>
+            <div class="papers-list-section">
+                <h2>Parsed Literature</h2>
+                <div class="papers-list" id="papers-list">
+                    <div class="empty-list-state">No papers uploaded yet</div>
                 </div>
             </div>
 
             <!-- Settings / Config -->
-            <div class="sidebar-footer pt-3 mt-3 border-top">
-                <div class="theme-toggle-wrapper d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-secondary">Theme</span>
-                    <button id="theme-toggle" class="btn theme-toggle-btn d-flex align-items-center justify-content-center" aria-label="Toggle Theme">
+            <div class="sidebar-footer">
+                <div class="theme-toggle-wrapper">
+                    <span>Theme</span>
+                    <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Theme">
                         <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="5"></circle>
                             <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -117,69 +113,62 @@
                         </svg>
                     </button>
                 </div>
-                <div class="api-status d-flex align-items-center gap-2 mb-3">
+                <div class="api-status">
                     <span class="status-dot green"></span>
-                    <span class="status-text text-secondary">FastAPI Connected</span>
+                    <span class="status-text">FastAPI Connected</span>
                 </div>
-                <div class="copyright-footer text-secondary">
+                <div class="copyright-footer">
                     &copy; 2026 Mosudi Isiaka O.<br>
-                    <a href="mailto:info@mioemi.com" class="text-secondary text-decoration-none">info@mioemi.com</a> | 
-                    <a href="https://mioemi.com" target="_blank" rel="noopener" class="text-secondary text-decoration-none">mioemi.com</a>
+                    <a href="mailto:info@mioemi.com">info@mioemi.com</a> | 
+                    <a href="https://mioemi.com" target="_blank" rel="noopener">mioemi.com</a>
                 </div>
             </div>
         </aside>
 
         <!-- Main Workspace -->
-        <main class="workspace flex-grow-1 p-5 d-flex flex-column overflow-y-auto">
+        <main class="workspace">
             <!-- Initial Welcome State -->
-            <div class="welcome-container m-auto text-center" id="welcome-view" style="max-width: 800px;">
+            <div class="welcome-container" id="welcome-view">
                 <div class="welcome-content">
-                    <div class="logo-large d-flex align-items-center justify-content-center mb-4 mx-auto">
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                            <path d="M12 5v6M9 8h6" opacity="0.9"></path>
-                        </svg>
+                    <div class="logo-large">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        <path d="M12 5v6M9 8h6" opacity="0.9"></path>
+                    </svg>
                     </div>
-                    <h1 class="fw-extrabold mb-3">Automated Paper Reviews & Summaries</h1>
-                    <p class="text-secondary mb-5 fs-5">Upload academic research articles to automatically segment sections, track references, generate structured summaries, and converse directly with the paper's contents.</p>
-                    
-                    <div class="row g-3 justify-content-center text-start">
-                        <div class="col-md-4">
-                            <div class="card h-100 p-4 feature-card">
-                                <h3 class="h6 fw-bold mb-2">PhD Summarisation</h3>
-                                <p class="small text-secondary mb-0">Aspect-based critical reviews detailing synopsis, key methods, weaknesses, and future directions.</p>
-                            </div>
+                    <h1>Automated Paper Reviews & Summaries</h1>
+                    <p>Upload academic research articles to automatically segment sections, track references, generate structured summaries, and converse directly with the paper's contents.</p>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <h3>PhD Summarisation</h3>
+                            <p>Aspect-based critical reviews detailing synopsis, key methods, weaknesses, and future directions.</p>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card h-100 p-4 feature-card">
-                                <h3 class="h6 fw-bold mb-2">Citation Mapper</h3>
-                                <p class="small text-secondary mb-0">Auto-links bibliography items to exact context sentences in the body text.</p>
-                            </div>
+                        <div class="feature-card">
+                            <h3>Citation Mapper</h3>
+                            <p>Auto-links bibliography items to exact context sentences in the body text.</p>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card h-100 p-4 feature-card">
-                                <h3 class="h6 fw-bold mb-2">Contextual Q&A</h3>
-                                <p class="small text-secondary mb-0">Chat directly with your paper. Answers are contextually verified and sourced.</p>
-                            </div>
+                        <div class="feature-card">
+                            <h3>Contextual Q&A</h3>
+                            <p>Chat directly with your paper. Answers are contextually verified and sourced.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Paper Analysis Workspace -->
-            <div class="analysis-container d-flex flex-column h-100 hidden" id="analysis-view">
+            <div class="analysis-container hidden" id="analysis-view">
                 <!-- Paper Title Block -->
-                <header class="paper-header d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+                <header class="paper-header">
                     <div class="paper-title-area">
-                        <h2 id="paper-title" class="fw-bold mb-2">Paper Title Placeholder</h2>
-                        <div class="paper-meta d-flex gap-3 text-secondary small">
-                            <span class="meta-item author d-flex align-items-center gap-1" id="paper-authors">Authors Placeholder</span>
-                            <span class="meta-item year d-flex align-items-center gap-1" id="paper-year">2026</span>
-                            <span class="meta-item pages d-flex align-items-center gap-1" id="paper-pages">0 pages</span>
+                        <h2 id="paper-title">Paper Title Placeholder</h2>
+                        <div class="paper-meta">
+                            <span class="meta-item author" id="paper-authors">Authors Placeholder</span>
+                            <span class="meta-item year" id="paper-year">2026</span>
+                            <span class="meta-item pages" id="paper-pages">0 pages</span>
                         </div>
                     </div>
-                    <button class="btn btn-primary export-btn d-flex align-items-center gap-2" id="export-summary-btn">
+                    <button class="export-btn" id="export-summary-btn">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="7 10 12 15 17 10"></polyline>
@@ -190,85 +179,71 @@
                 </header>
 
                 <!-- Workspace Body Split -->
-                <div class="workspace-body d-flex flex-column flex-grow-1 overflow-hidden">
+                <div class="workspace-body">
                     <!-- Navigation Tabs -->
-                    <div class="tabs-nav d-flex gap-2 border-bottom pb-2 mb-4">
-                        <button class="btn tab-btn active" data-tab="summary">Structured Review</button>
-                        <button class="btn tab-btn" data-tab="citations">Citation Linker</button>
-                        <button class="btn tab-btn" data-tab="chat">Interactive Chat</button>
-                        <button class="btn tab-btn" data-tab="keywords">Keywords Cloud</button>
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" data-tab="summary">Structured Review</button>
+                        <button class="tab-btn" data-tab="citations">Citation Linker</button>
+                        <button class="tab-btn" data-tab="chat">Interactive Chat</button>
+                        <button class="tab-btn" data-tab="keywords">Keywords Cloud</button>
                     </div>
 
                     <!-- Tab Contents Container -->
-                    <div class="tab-contents flex-grow-1 overflow-hidden">
+                    <div class="tab-contents">
                         <!-- Summary Tab -->
                         <div class="tab-pane active" id="tab-summary">
-                            <div class="row g-4 overflow-y-auto h-100 pb-4 pe-1">
+                            <div class="summary-grid">
                                 <!-- Executive Synopsis -->
-                                <div class="col-12">
-                                    <section class="summary-section card p-4">
-                                        <h3 class="h5 fw-bold mb-3">Executive Synopsis</h3>
-                                        <p id="summary-synopsis" class="summary-text-block mb-0">Loading synopsis...</p>
-                                    </section>
-                                </div>
-                                
+                                <section class="summary-section full-width card">
+                                    <h3>Executive Synopsis</h3>
+                                    <p id="summary-synopsis" class="summary-text-block">Loading synopsis...</p>
+                                </section>
+
                                 <!-- Key Contributions -->
-                                <div class="col-md-6">
-                                    <section class="summary-section card p-4 h-100">
-                                        <h3 class="h5 fw-bold mb-3">Key Contributions</h3>
-                                        <ul id="summary-contributions" class="summary-list mb-0">
-                                            <!-- Rendered dynamically -->
-                                        </ul>
-                                    </section>
-                                </div>
+                                <section class="summary-section card">
+                                    <h3>Key Contributions</h3>
+                                    <ul id="summary-contributions" class="summary-list">
+                                        <!-- Rendered dynamically -->
+                                    </ul>
+                                </section>
 
                                 <!-- Methodology & Setup -->
-                                <div class="col-md-6">
-                                    <section class="summary-section card p-4 h-100">
-                                        <h3 class="h5 fw-bold mb-3">Methodology & Experimental Framework</h3>
-                                        <p id="summary-methodology" class="summary-text-block mb-0">Loading methodology details...</p>
-                                    </section>
-                                </div>
+                                <section class="summary-section card">
+                                    <h3>Methodology & Experimental Framework</h3>
+                                    <p id="summary-methodology" class="summary-text-block">Loading methodology details...</p>
+                                </section>
 
                                 <!-- Critical Review -->
-                                <div class="col-md-6">
-                                    <section class="summary-section card p-4 h-100">
-                                        <h3 class="h5 fw-bold mb-3">Critical Review & Limitations</h3>
-                                        <ul id="summary-critique" class="summary-list critical mb-0">
-                                            <!-- Rendered dynamically -->
-                                        </ul>
-                                    </section>
-                                </div>
+                                <section class="summary-section card">
+                                    <h3>Critical Review & Limitations</h3>
+                                    <ul id="summary-critique" class="summary-list critical">
+                                        <!-- Rendered dynamically -->
+                                    </ul>
+                                </section>
 
                                 <!-- Future Directions -->
-                                <div class="col-md-6">
-                                    <section class="summary-section card p-4 h-100">
-                                        <h3 class="h5 fw-bold mb-3">Potential Future Research</h3>
-                                        <ul id="summary-future" class="summary-list future mb-0">
-                                            <!-- Rendered dynamically -->
-                                        </ul>
-                                    </section>
-                                </div>
+                                <section class="summary-section card">
+                                    <h3>Potential Future Research</h3>
+                                    <ul id="summary-future" class="summary-list future">
+                                        <!-- Rendered dynamically -->
+                                    </ul>
+                                </section>
                             </div>
                         </div>
 
                         <!-- Citations Tab -->
                         <div class="tab-pane" id="tab-citations">
-                            <div class="row g-4 h-100 overflow-hidden">
-                                <div class="col-md-5 h-100 d-flex flex-column">
-                                    <div class="references-sidebar card p-4 h-100 d-flex flex-column overflow-hidden">
-                                        <h3 class="h6 text-uppercase fw-bold text-secondary mb-3">Bibliography Items</h3>
-                                        <div class="references-list flex-grow-1 overflow-y-auto pe-1" id="references-list">
-                                            <!-- Dynamically loaded list of references -->
-                                        </div>
+                            <div class="citations-workspace">
+                                <div class="references-sidebar">
+                                    <h3>Bibliography Items</h3>
+                                    <div class="references-list" id="references-list">
+                                        <!-- Dynamically loaded list of references -->
                                     </div>
                                 </div>
-                                <div class="col-md-7 h-100 d-flex flex-column">
-                                    <div class="citation-details card p-4 h-100 d-flex flex-column overflow-hidden">
-                                        <h3 class="h6 text-uppercase fw-bold text-secondary mb-3">In-Text Citation Contexts</h3>
-                                        <div class="contexts-container flex-grow-1 overflow-y-auto pe-1" id="contexts-container">
-                                            <div class="empty-context-state text-center text-secondary py-5">Select a reference on the left to see where it was cited in the paper.</div>
-                                        </div>
+                                <div class="citation-details">
+                                    <h3>In-Text Citation Contexts</h3>
+                                    <div class="contexts-container" id="contexts-container">
+                                        <div class="empty-context-state">Select a reference on the left to see where it was cited in the paper.</div>
                                     </div>
                                 </div>
                             </div>
@@ -276,15 +251,15 @@
 
                         <!-- Chat Tab -->
                         <div class="tab-pane" id="tab-chat">
-                            <div class="chat-workspace card p-4 h-100 d-flex flex-column overflow-hidden">
-                                <div class="chat-history flex-grow-1 overflow-y-auto mb-3 pe-1" id="chat-history">
-                                    <div class="system-message p-3 rounded mb-3">
+                            <div class="chat-workspace">
+                                <div class="chat-history" id="chat-history">
+                                    <div class="system-message">
                                         Hello! I have fully ingested this paper. Ask me anything about its methodology, results, contributions, or references, and I will answer grounded directly in the text.
                                     </div>
                                 </div>
-                                <form class="chat-input-area input-group" id="chat-form">
-                                    <input type="text" id="chat-input" class="form-control" placeholder="Ask a question about this paper..." required autocomplete="off">
-                                    <button type="submit" class="btn btn-primary send-btn" id="send-chat-btn">
+                                <form class="chat-input-area" id="chat-form">
+                                    <input type="text" id="chat-input" placeholder="Ask a question about this paper..." required autocomplete="off">
+                                    <button type="submit" class="send-btn" id="send-chat-btn">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <line x1="22" y1="2" x2="11" y2="13"></line>
                                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -296,10 +271,10 @@
 
                         <!-- Keywords Tab -->
                         <div class="tab-pane" id="tab-keywords">
-                            <div class="keywords-workspace card p-4 h-100 d-flex flex-column overflow-hidden">
-                                <h3 class="h5 fw-bold mb-2">Extracted Key Concepts</h3>
-                                <p class="text-secondary small mb-4">Key scientific concepts extracted from this document based on semantic relevance.</p>
-                                <div class="keywords-cloud flex-grow-1 overflow-y-auto" id="keywords-cloud">
+                            <div class="keywords-workspace">
+                                <h3>Extracted Key Concepts</h3>
+                                <p class="section-desc">Key scientific concepts extracted from this document based on semantic relevance.</p>
+                                <div class="keywords-cloud" id="keywords-cloud">
                                     <!-- Rendered dynamically -->
                                 </div>
                             </div>
