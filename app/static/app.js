@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const state = {
         projects: [],
         selectedProjectId: localStorage.getItem("selectedProjectId") || "default",
-        selectedModelId: localStorage.getItem("selectedModelId") || "gemini-2.5-flash",
+        selectedModelId: localStorage.getItem("selectedModelId") || "gemini",
         papers: [],
         selectedPaper: null,
         chatHistories: {}, // Map of paperId -> chatMessages
