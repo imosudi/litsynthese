@@ -163,11 +163,11 @@ body {
 
 .project-select-dropdown:hover, .project-select-dropdown:focus {
     border-color: var(--accent-color);
-    background: var(--card-hover);
+    background-color: var(--card-hover);
 }
 
 .project-select-dropdown option {
-    background: var(--bg-secondary);
+    background-color: var(--bg-secondary);
     color: var(--text-primary);
 }
 
@@ -207,11 +207,11 @@ body {
 
 .model-select-dropdown:hover, .model-select-dropdown:focus {
     border-color: var(--accent-color);
-    background: var(--card-hover);
+    background-color: var(--card-hover);
 }
 
 .model-select-dropdown option {
-    background: var(--bg-secondary);
+    background-color: var(--bg-secondary);
     color: var(--text-primary);
 }
 
