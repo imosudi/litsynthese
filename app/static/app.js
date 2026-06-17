@@ -95,10 +95,10 @@ document.addEventListener("DOMContentLoaded", () => {
             projectSelect.appendChild(opt);
         });
         
-        if (state.selectedProjectId === "default") {
-            deleteProjectBtn.style.display = "none";
-        } else {
+        if (state.projects.length > 0) {
             deleteProjectBtn.style.display = "flex";
+        } else {
+            deleteProjectBtn.style.display = "none";
         }
     }
 
@@ -136,11 +136,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     deleteProjectBtn.addEventListener("click", async () => {
-        if (state.selectedProjectId === "default") {
-            alert("The default project cannot be deleted.");
-            return;
-        }
-        
         const activeProj = state.projects.find(p => p.id === state.selectedProjectId);
         const name = activeProj ? activeProj.name : state.selectedProjectId;
         if (!confirm(`Are you sure you want to delete project "${name}"?\nThis will permanently remove all its uploaded papers and reviews.`)) {
@@ -152,8 +147,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "DELETE"
             });
             if (res.ok) {
-                state.selectedProjectId = "default";
-                localStorage.setItem("selectedProjectId", state.selectedProjectId);
+                state.selectedProjectId = "";
+                localStorage.setItem("selectedProjectId", "");
                 
                 welcomeView.classList.remove("hidden");
                 analysisView.classList.add("hidden");
@@ -174,12 +169,6 @@ document.addEventListener("DOMContentLoaded", () => {
     projectSelect.addEventListener("change", (e) => {
         state.selectedProjectId = e.target.value;
         localStorage.setItem("selectedProjectId", state.selectedProjectId);
-        
-        if (state.selectedProjectId === "default") {
-            deleteProjectBtn.style.display = "none";
-        } else {
-            deleteProjectBtn.style.display = "flex";
-        }
         
         welcomeView.classList.remove("hidden");
         analysisView.classList.add("hidden");

@@ -41,54 +41,99 @@ class ProjectCreate(BaseModel):
     name: str
 
 def migrate_existing_data():
-    """Migrates any existing legacy data into a default project folder."""
-    default_project_id = "default"
-    default_project_name = "Default Project"
+    """Migrates legacy data and converts any 'default' project to a standard UUID-based project."""
+    os.makedirs(PROJECTS_BASE_DIR, exist_ok=True)
     
-    default_dir = os.path.join(PROJECTS_BASE_DIR, default_project_id)
-    default_uploads = os.path.join(default_dir, "uploads")
-    default_processed = os.path.join(default_dir, "processed")
-    
-    # Legacy data is in root data/ relative to project root
+    # 1. Convert legacy 'default' project folder to a UUID project
+    old_default_dir = os.path.join(PROJECTS_BASE_DIR, "default")
+    if os.path.exists(old_default_dir) and os.path.isdir(old_default_dir):
+        new_project_id = str(uuid.uuid4())
+        new_project_dir = os.path.join(PROJECTS_BASE_DIR, new_project_id)
+        try:
+            # Load metadata if it exists to preserve name
+            meta_path = os.path.join(old_default_dir, "metadata.json")
+            name = "Machine Learning Reviews"
+            created_at = time.time()
+            if os.path.exists(meta_path):
+                with open(meta_path, "r", encoding="utf-8") as f:
+                    meta = json.load(f)
+                    if meta.get("name") and meta.get("name") != "Default Project":
+                        name = meta.get("name")
+                    created_at = meta.get("created_at", created_at)
+            
+            # Rename the folder
+            os.rename(old_default_dir, new_project_dir)
+            
+            # Write updated metadata
+            new_meta_path = os.path.join(new_project_dir, "metadata.json")
+            with open(new_meta_path, "w", encoding="utf-8") as f:
+                json.dump({
+                    "id": new_project_id,
+                    "name": name,
+                    "created_at": created_at
+                }, f, indent=2)
+            logger.info(f"Successfully migrated old 'default' project to UUID project '{name}' ({new_project_id})")
+        except Exception as e:
+            logger.error(f"Error migrating 'default' project folder: {e}")
+
+    # 2. Check if we need to initialize a fresh project
+    existing_projects = []
+    for item in os.listdir(PROJECTS_BASE_DIR):
+        item_path = os.path.join(PROJECTS_BASE_DIR, item)
+        if os.path.isdir(item_path):
+            meta_path = os.path.join(item_path, "metadata.json")
+            if os.path.exists(meta_path):
+                existing_projects.append(item)
+
+    if not existing_projects:
+        # Create initial project
+        new_id = str(uuid.uuid4())
+        new_dir = os.path.join(PROJECTS_BASE_DIR, new_id)
+        os.makedirs(os.path.join(new_dir, "uploads"), exist_ok=True)
+        os.makedirs(os.path.join(new_dir, "processed"), exist_ok=True)
+        meta = {
+            "id": new_id,
+            "name": "Machine Learning Reviews",
+            "created_at": time.time()
+        }
+        with open(os.path.join(new_dir, "metadata.json"), "w", encoding="utf-8") as f:
+            json.dump(meta, f, indent=2)
+        logger.info(f"Initialized new project '{meta['name']}' ({new_id})")
+        existing_projects.append(new_id)
+
+    # 3. Migrate any legacy unassigned uploads/processed files from root data/ to the first project
+    target_project_id = existing_projects[0]
+    target_dir = os.path.join(PROJECTS_BASE_DIR, target_project_id)
+    target_uploads = os.path.join(target_dir, "uploads")
+    target_processed = os.path.join(target_dir, "processed")
+
     base_data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
     legacy_uploads = os.path.join(base_data_dir, "uploads")
     legacy_processed = os.path.join(base_data_dir, "processed")
-    
-    os.makedirs(default_uploads, exist_ok=True)
-    os.makedirs(default_processed, exist_ok=True)
-    
-    meta_path = os.path.join(default_dir, "metadata.json")
-    if not os.path.exists(meta_path):
-        with open(meta_path, "w", encoding="utf-8") as f:
-            json.dump({
-                "id": default_project_id,
-                "name": default_project_name,
-                "created_at": time.time()
-            }, f, indent=2)
-            
-    # Migrate uploads
-    if os.path.exists(legacy_uploads):
+
+    os.makedirs(target_uploads, exist_ok=True)
+    os.makedirs(target_processed, exist_ok=True)
+
+    if os.path.exists(legacy_uploads) and os.path.isdir(legacy_uploads):
         for f_name in os.listdir(legacy_uploads):
             src = os.path.join(legacy_uploads, f_name)
-            dst = os.path.join(default_uploads, f_name)
+            dst = os.path.join(target_uploads, f_name)
             if os.path.isfile(src):
                 try:
                     os.rename(src, dst)
                 except Exception as e:
                     logger.warning(f"Failed to migrate upload file {f_name}: {e}")
-                    
-    # Migrate processed
-    if os.path.exists(legacy_processed):
+
+    if os.path.exists(legacy_processed) and os.path.isdir(legacy_processed):
         for f_name in os.listdir(legacy_processed):
             src = os.path.join(legacy_processed, f_name)
-            dst = os.path.join(default_processed, f_name)
+            dst = os.path.join(target_processed, f_name)
             if os.path.isfile(src):
                 try:
                     os.rename(src, dst)
                 except Exception as e:
                     logger.warning(f"Failed to migrate processed file {f_name}: {e}")
-                    
-    # Cleanup empty folders
+
     try:
         if os.path.exists(legacy_uploads) and not os.listdir(legacy_uploads):
             os.rmdir(legacy_uploads)
@@ -143,6 +188,22 @@ async def list_projects():
                         projects.append(meta)
                 except Exception as e:
                     logger.error(f"Error reading project metadata for {item}: {e}")
+                    
+    # If no projects exist, initialize a new default one on the fly
+    if not projects:
+        project_id = str(uuid.uuid4())
+        project_dir = os.path.join(PROJECTS_BASE_DIR, project_id)
+        os.makedirs(os.path.join(project_dir, "uploads"), exist_ok=True)
+        os.makedirs(os.path.join(project_dir, "processed"), exist_ok=True)
+        meta = {
+            "id": project_id,
+            "name": "Machine Learning Reviews",
+            "created_at": time.time()
+        }
+        with open(os.path.join(project_dir, "metadata.json"), "w", encoding="utf-8") as f:
+            json.dump(meta, f, indent=2)
+        projects.append(meta)
+        
     # Sort projects by creation time
     projects.sort(key=lambda x: x.get("created_at", 0))
     return projects
@@ -174,9 +235,6 @@ async def create_project(req: ProjectCreate):
 @app.delete("/api/project/{project_id}")
 async def delete_project(project_id: str):
     """Deletes a review project and all its uploaded papers/summaries."""
-    if project_id == "default":
-        raise HTTPException(status_code=400, detail="The default project cannot be deleted.")
-        
     clean_id = "".join(c for c in project_id if c.isalnum() or c in ("-", "_")).strip()
     if not clean_id:
         raise HTTPException(status_code=400, detail="Invalid project ID.")
