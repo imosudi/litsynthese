@@ -503,6 +503,7 @@ body {
     align-items: center;
     font-size: 0.85rem;
     color: var(--text-secondary);
+    position: relative;
 }
 
 .theme-toggle-btn {
@@ -521,6 +522,24 @@ body {
 .theme-toggle-btn:hover {
     border-color: var(--accent-color);
     color: var(--accent-color);
+}
+
+.theme-flash-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent-color);
+    opacity: 0;
+    transform: translateY(3px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    position: absolute;
+    right: 48px;
+    white-space: nowrap;
+}
+
+.theme-flash-name.show {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .api-status {
@@ -1280,70 +1299,7 @@ body {
     border: 1px solid rgba(52, 211, 153, 0.2) !important;
 }
 
-/* Theme Option Cards */
-.theme-card-option {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    height: 100%;
-}
 
-.theme-card-option:hover {
-    border-color: var(--accent-color);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
-
-.theme-card-option.active {
-    border-color: var(--accent-color) !important;
-    background: var(--card-hover) !important;
-    box-shadow: 0 0 0 2px var(--accent-color);
-}
-
-.theme-dots {
-    display: flex;
-    gap: 4px;
-}
-
-.theme-dots .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-/* Company specific dot colors */
-.theme-dots.google .blue { background-color: #4285f4; }
-.theme-dots.google .red { background-color: #ea4335; }
-.theme-dots.google .yellow { background-color: #fabc05; }
-.theme-dots.google .green { background-color: #34a853; }
-
-.theme-dots.samsung .violet { background-color: #a200ff; }
-.theme-dots.samsung .pink { background-color: #ff007f; }
-.theme-dots.samsung .cyan { background-color: #00f0ff; }
-
-.theme-dots.microsoft .blue { background-color: #0078d4; }
-.theme-dots.microsoft .teal { background-color: #00bcf2; }
-.theme-dots.microsoft .green { background-color: #7fba00; }
-
-.theme-dots.hyundai .navy { background-color: #002c5f; }
-.theme-dots.hyundai .silver { background-color: #8c969e; }
-.theme-dots.hyundai .cyan { background-color: #00aad2; }
-
-.theme-dots.default-dark .indigo { background-color: #6366f1; }
-.theme-dots.default-dark .purple { background-color: #8b5cf6; }
-.theme-dots.default-dark .magenta { background-color: #d946ef; }
-
-.theme-dots.default-light .indigo { background-color: #4f46e5; }
-.theme-dots.default-light .purple { background-color: #7c3aed; }
-.theme-dots.default-light .white { background-color: #ffffff; border: 1px solid #ddd; }
-
-.theme-card-desc {
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
-}
 
 /* API Status Box */
 .api-status-box {

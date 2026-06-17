@@ -139,6 +139,7 @@
                             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                         </svg>
                     </button>
+                    <span id="theme-flash-name" class="theme-flash-name"></span>
                 </div>
                 <div class="api-status">
                     <span class="status-dot green"></span>
@@ -383,115 +384,13 @@
                             </div>
                         </div>
 
-                        <!-- Theme Grid & Settings -->
+                        <!-- API Status Dashboard -->
                         <div class="col-lg-7 col-12">
-                            <div class="theme-selection-card card p-4 h-100">
-                                <h3 class="h5 fw-bold mb-3">Tech Company Themes</h3>
-                                <p class="text-secondary small mb-4">Select a corporate design language to instantly adapt your workspaces to match the aesthetic of leading technology companies.</p>
-                                
-                                <div class="row g-3">
-                                    <!-- Google Theme -->
-                                    <div class="col-md-6 col-12">
-                                        <div class="theme-card-option p-3 rounded" data-theme-value="google">
-                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
-                                                <span class="theme-card-title fw-bold">Google Gemini</span>
-                                                <div class="theme-dots google">
-                                                    <span class="dot blue"></span>
-                                                    <span class="dot red"></span>
-                                                    <span class="dot yellow"></span>
-                                                    <span class="dot green"></span>
-                                                </div>
-                                            </div>
-                                            <p class="theme-card-desc mb-0">Clean slate canvas, rounded card styling, and multi-colored google accent indicators.</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Samsung Theme -->
-                                    <div class="col-md-6 col-12">
-                                        <div class="theme-card-option p-3 rounded" data-theme-value="samsung">
-                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
-                                                <span class="theme-card-title fw-bold">Samsung Galaxy</span>
-                                                <div class="theme-dots samsung">
-                                                    <span class="dot violet"></span>
-                                                    <span class="dot pink"></span>
-                                                    <span class="dot cyan"></span>
-                                                </div>
-                                            </div>
-                                            <p class="theme-card-desc mb-0">OLED pure dark mode featuring sleek magenta accents and deep violet container backdrops.</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Microsoft Theme -->
-                                    <div class="col-md-6 col-12">
-                                        <div class="theme-card-option p-3 rounded" data-theme-value="microsoft">
-                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
-                                                <span class="theme-card-title fw-bold">Microsoft Fluent</span>
-                                                <div class="theme-dots microsoft">
-                                                    <span class="dot blue"></span>
-                                                    <span class="dot teal"></span>
-                                                    <span class="dot green"></span>
-                                                </div>
-                                            </div>
-                                            <p class="theme-card-desc mb-0">High-blur frosted glass, crisp geometric grid lines, and teal accent elements.</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Hyundai Theme -->
-                                    <div class="col-md-6 col-12">
-                                        <div class="theme-card-option p-3 rounded" data-theme-value="hyundai">
-                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
-                                                <span class="theme-card-title fw-bold">Hyundai Modern</span>
-                                                <div class="theme-dots hyundai">
-                                                    <span class="dot navy"></span>
-                                                    <span class="dot silver"></span>
-                                                    <span class="dot cyan"></span>
-                                                </div>
-                                            </div>
-                                            <p class="theme-card-desc mb-0">Ultra-sleek corporate blue and slate, modern minimal borders, and bright cyan active highlights.</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Default Purple -->
-                                    <div class="col-md-6 col-12">
-                                        <div class="theme-card-option p-3 rounded" data-theme-value="dark">
-                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
-                                                <span class="theme-card-title fw-bold">LitSynthese Dark</span>
-                                                <div class="theme-dots default-dark">
-                                                    <span class="dot indigo"></span>
-                                                    <span class="dot purple"></span>
-                                                    <span class="dot magenta"></span>
-                                                </div>
-                                            </div>
-                                            <p class="theme-card-desc mb-0">Original glassmorphic dark theme with vibrant purple gradients and indigo panels.</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Default Light -->
-                                    <div class="col-md-6 col-12">
-                                        <div class="theme-card-option p-3 rounded" data-theme-value="light">
-                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
-                                                <span class="theme-card-title fw-bold">LitSynthese Light</span>
-                                                <div class="theme-dots default-light">
-                                                    <span class="dot indigo"></span>
-                                                    <span class="dot purple"></span>
-                                                    <span class="dot white"></span>
-                                                </div>
-                                            </div>
-                                            <p class="theme-card-desc mb-0">Clean, crisp light layout optimized for bright environments and paper-like text styling.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- API Status Dashboard -->
-                    <div class="row g-4 mt-1">
-                        <div class="col-12">
-                            <div class="card p-4">
+                            <div class="card p-4 h-100">
                                 <h3 class="h5 fw-bold mb-3">API Connectivity & Engine Status</h3>
+                                <p class="text-secondary small mb-4">LitSynthese automatically checks real-time connectivity with your configured LLM API keys to verify parsing and analysis availability.</p>
                                 <div class="row g-3">
-                                    <div class="col-md-4">
+                                    <div class="col-12">
                                         <div class="api-status-box p-3 rounded d-flex align-items-center justify-content-between" id="status-box-gemini">
                                             <div>
                                                 <h4 class="h6 mb-1">Gemini AI Engine</h4>
@@ -500,7 +399,7 @@
                                             <span class="status-indicator-badge" id="indicator-gemini">Checking...</span>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-12">
                                         <div class="api-status-box p-3 rounded d-flex align-items-center justify-content-between" id="status-box-groq">
                                             <div>
                                                 <h4 class="h6 mb-1">Groq Engine</h4>
@@ -509,7 +408,7 @@
                                             <span class="status-indicator-badge" id="indicator-groq">Checking...</span>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-12">
                                         <div class="api-status-box p-3 rounded d-flex align-items-center justify-content-between" id="status-box-openrouter">
                                             <div>
                                                 <h4 class="h6 mb-1">OpenRouter Engine</h4>

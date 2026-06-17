@@ -69,26 +69,39 @@ document.addEventListener("DOMContentLoaded", () => {
     const indicatorGroq = document.getElementById("indicator-groq");
     const indicatorOpenrouter = document.getElementById("indicator-openrouter");
 
-    // Theme Select Cards
-    const themeCards = document.querySelectorAll(".theme-card-option");
+    // Theme names map - professional & relevant to scientific research assistant themes
+    const themeNames = {
+        "dark": "Amethyst Dark",
+        "light": "Lumina Light",
+        "google": "Aura Blue",
+        "samsung": "OLED Eclipse",
+        "microsoft": "Nordic Frost",
+        "hyundai": "Deep Steel"
+    };
+
+    const themeFlashNameLabel = document.getElementById("theme-flash-name");
 
     // Initialise Theme and Persistence
-    function setApplicationTheme(themeVal) {
+    function setApplicationTheme(themeVal, triggerFlash = false) {
         state.currentTheme = themeVal;
         document.documentElement.setAttribute("data-theme", themeVal);
         localStorage.setItem("theme", themeVal);
         
-        // Update active class on theme cards
-        themeCards.forEach(card => {
-            if (card.getAttribute("data-theme-value") === themeVal) {
-                card.classList.add("active");
-            } else {
-                card.classList.remove("active");
+        if (triggerFlash && themeFlashNameLabel) {
+            themeFlashNameLabel.textContent = themeNames[themeVal] || themeVal;
+            themeFlashNameLabel.classList.add("show");
+            
+            if (state.themeFlashTimeout) {
+                clearTimeout(state.themeFlashTimeout);
             }
-        });
+            state.themeFlashTimeout = setTimeout(() => {
+                themeFlashNameLabel.classList.remove("show");
+            }, 1500);
+        }
     }
 
-    setApplicationTheme(state.currentTheme);
+    // Initialize with false so we don't flash on page load
+    setApplicationTheme(state.currentTheme, false);
 
     // Theme Toggle Handler (Cycles through available themes)
     const availableThemes = ["dark", "light", "google", "samsung", "microsoft", "hyundai"];
@@ -96,17 +109,9 @@ document.addEventListener("DOMContentLoaded", () => {
         themeToggle.addEventListener("click", () => {
             let currentIndex = availableThemes.indexOf(state.currentTheme);
             let nextIndex = (currentIndex + 1) % availableThemes.length;
-            setApplicationTheme(availableThemes[nextIndex]);
+            setApplicationTheme(availableThemes[nextIndex], true);
         });
     }
-
-    // Theme Card Click Listeners
-    themeCards.forEach(card => {
-        card.addEventListener("click", () => {
-            const themeVal = card.getAttribute("data-theme-value");
-            setApplicationTheme(themeVal);
-        });
-    });
 
     // View Switching Logic
     function switchView(viewName) {
