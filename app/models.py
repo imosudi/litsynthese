@@ -18,6 +18,8 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    security_question: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    hashed_security_answer: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     # Relationships
     projects: Mapped[List["Project"]] = relationship(
@@ -41,6 +43,26 @@ class User(Base):
             )
         except Exception:
             return False
+
+    def verify_security_answer(self, answer: str) -> bool:
+        """Verifies a plaintext answer against the stored hashed security answer (case-insensitive & trimmed)."""
+        if not self.hashed_security_answer:
+            return False
+        try:
+            cleaned = answer.strip().lower()
+            return bcrypt.checkpw(
+                cleaned.encode("utf-8"),
+                self.hashed_security_answer.encode("utf-8")
+            )
+        except Exception:
+            return False
+
+    @classmethod
+    def hash_security_answer(cls, answer: str) -> str:
+        """Hashes a plaintext answer using bcrypt after converting to lowercase and stripping whitespace."""
+        cleaned = answer.strip().lower()
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(cleaned.encode("utf-8"), salt).decode("utf-8")
 
     @classmethod
     def hash_password(cls, password: str) -> str:

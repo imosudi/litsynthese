@@ -51,6 +51,17 @@ class UserAuth(BaseModel):
     email: str
     password: str
 
+class UserRegister(BaseModel):
+    email: str
+    password: str
+    security_question: str
+    security_answer: str
+
+class PasswordResetRequest(BaseModel):
+    email: str
+    security_answer: str
+    new_password: str
+
 # Helpers
 def get_project_dirs(project_id: str) -> tuple[str, str]:
     """Helper to get safe project directories and create them if needed."""
@@ -77,13 +88,17 @@ def get_user_project(project_id: str, user_id: int, db: Session) -> Project:
 
 # Authentication Endpoints
 @app.post("/api/auth/register")
-def register_user(auth_req: UserAuth, db: Session = Depends(get_db)):
+def register_user(auth_req: UserRegister, db: Session = Depends(get_db)):
     """Registers a new user and automatically initializes their first default project."""
     email = auth_req.email.strip().lower()
     password = auth_req.password
+    security_q = auth_req.security_question.strip()
+    security_a = auth_req.security_answer.strip()
     
     if not email or not password:
         raise HTTPException(status_code=400, detail="Email and password cannot be empty.")
+    if not security_q or not security_a:
+        raise HTTPException(status_code=400, detail="Security question and answer are required.")
     if len(password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
         
@@ -93,7 +108,13 @@ def register_user(auth_req: UserAuth, db: Session = Depends(get_db)):
         
     # Create user
     hashed_pwd = User.hash_password(password)
-    new_user = User(email=email, hashed_password=hashed_pwd)
+    hashed_ans = User.hash_security_answer(security_a)
+    new_user = User(
+        email=email,
+        hashed_password=hashed_pwd,
+        security_question=security_q,
+        hashed_security_answer=hashed_ans
+    )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -121,6 +142,33 @@ def login_user(auth_req: UserAuth, db: Session = Depends(get_db)):
         
     token = create_access_token({"sub": user.email})
     return {"access_token": token, "token_type": "bearer", "email": user.email}
+
+@app.get("/api/auth/forgot-password/question")
+def get_forgot_password_question(email: str, db: Session = Depends(get_db)):
+    """Retrieves the security question for the specified email."""
+    clean_email = email.strip().lower()
+    user = db.query(User).filter(User.email == clean_email).first()
+    if not user or not user.security_question:
+        return {"question": "What is your recovery answer?"}
+    return {"question": user.security_question}
+
+@app.post("/api/auth/forgot-password/reset")
+def reset_forgot_password(req: PasswordResetRequest, db: Session = Depends(get_db)):
+    """Verifies security answer and updates password."""
+    clean_email = req.email.strip().lower()
+    user = db.query(User).filter(User.email == clean_email).first()
+    if not user or not user.hashed_security_answer:
+        raise HTTPException(status_code=400, detail="Invalid email or security answer.")
+        
+    if not user.verify_security_answer(req.security_answer):
+        raise HTTPException(status_code=400, detail="Invalid email or security answer.")
+        
+    if len(req.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
+        
+    user.hashed_password = User.hash_password(req.new_password)
+    db.commit()
+    return {"status": "success", "message": "Password updated successfully."}
 
 class ProfileUpdate(BaseModel):
     institution: Optional[str] = None

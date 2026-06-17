@@ -145,16 +145,30 @@ document.addEventListener("DOMContentLoaded", () => {
         authToggleBtn.addEventListener("click", (e) => {
             e.preventDefault();
             isRegisterMode = !isRegisterMode;
+            
+            const recoveryFields = document.getElementById("register-recovery-fields");
+            const qInput = document.getElementById("auth-question");
+            const aInput = document.getElementById("auth-answer");
+            const loginExtraRow = document.getElementById("login-extra-row");
+            
             if (isRegisterMode) {
                 document.querySelector(".auth-title").textContent = "Register";
                 authToggleText.textContent = "Already have an account?";
                 authToggleBtn.textContent = "Sign In";
                 authSubmitBtn.textContent = "Create Account";
+                if (recoveryFields) recoveryFields.classList.remove("hidden");
+                if (qInput) qInput.required = true;
+                if (aInput) aInput.required = true;
+                if (loginExtraRow) loginExtraRow.classList.add("hidden");
             } else {
                 document.querySelector(".auth-title").textContent = "LitSynthese";
                 authToggleText.textContent = "New to LitSynthese?";
                 authToggleBtn.textContent = "Create an Account";
                 authSubmitBtn.textContent = "Sign In";
+                if (recoveryFields) recoveryFields.classList.add("hidden");
+                if (qInput) qInput.required = false;
+                if (aInput) aInput.required = false;
+                if (loginExtraRow) loginExtraRow.classList.remove("hidden");
             }
             authErrorAlert.classList.add("hidden");
         });
@@ -174,13 +188,19 @@ document.addEventListener("DOMContentLoaded", () => {
             
             const endpoint = isRegisterMode ? "/api/auth/register" : "/api/auth/login";
             
+            let bodyObj = { email, password };
+            if (isRegisterMode) {
+                bodyObj.security_question = document.getElementById("auth-question").value;
+                bodyObj.security_answer = document.getElementById("auth-answer").value.trim();
+            }
+            
             try {
                 const res = await originalFetch(endpoint, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify(bodyObj)
                 });
                 
                 if (res.ok) {
@@ -206,6 +226,168 @@ document.addEventListener("DOMContentLoaded", () => {
             } finally {
                 authSubmitBtn.disabled = false;
                 authSubmitBtn.textContent = isRegisterMode ? "Create Account" : "Sign In";
+            }
+        });
+    }
+
+    // Forgot Password Flow Handlers
+    const forgotPasswordLink = document.getElementById("forgot-password-link");
+    const forgotPasswordForm = document.getElementById("forgot-password-form");
+    const recoveryEmail = document.getElementById("recovery-email");
+    const recoveryAnswer = document.getElementById("recovery-answer");
+    const recoveryNewPassword = document.getElementById("recovery-new-password");
+    
+    const recoveryStepEmail = document.getElementById("recovery-step-email");
+    const recoveryStepQuestion = document.getElementById("recovery-step-question");
+    const recoveryStepPassword = document.getElementById("recovery-step-password");
+    
+    const recoveryQuestionLabel = document.getElementById("recovery-question-label");
+    const recoveryErrorAlert = document.getElementById("recovery-error-alert");
+    const recoverySuccessAlert = document.getElementById("recovery-success-alert");
+    
+    const recoveryNextEmailBtn = document.getElementById("recovery-next-email-btn");
+    const recoveryNextAnswerBtn = document.getElementById("recovery-next-answer-btn");
+    const recoveryCancelBtn = document.getElementById("recovery-cancel-btn");
+
+    function resetRecoveryWizard() {
+        if (recoveryEmail) recoveryEmail.value = "";
+        if (recoveryAnswer) recoveryAnswer.value = "";
+        if (recoveryNewPassword) recoveryNewPassword.value = "";
+        if (recoveryErrorAlert) recoveryErrorAlert.classList.add("hidden");
+        if (recoverySuccessAlert) recoverySuccessAlert.classList.add("hidden");
+        
+        if (recoveryStepEmail) recoveryStepEmail.classList.remove("hidden");
+        if (recoveryStepQuestion) recoveryStepQuestion.classList.add("hidden");
+        if (recoveryStepPassword) recoveryStepPassword.classList.add("hidden");
+    }
+
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (authForm) authForm.classList.add("hidden");
+            if (forgotPasswordForm) forgotPasswordForm.classList.remove("hidden");
+            document.querySelector(".auth-toggle").classList.add("hidden");
+            document.querySelector(".auth-title").textContent = "Recover Account";
+            resetRecoveryWizard();
+        });
+    }
+
+    if (recoveryCancelBtn) {
+        recoveryCancelBtn.addEventListener("click", () => {
+            if (forgotPasswordForm) forgotPasswordForm.classList.add("hidden");
+            if (authForm) authForm.classList.remove("hidden");
+            document.querySelector(".auth-toggle").classList.remove("hidden");
+            document.querySelector(".auth-title").textContent = isRegisterMode ? "Register" : "LitSynthese";
+        });
+    }
+
+    if (recoveryNextEmailBtn) {
+        recoveryNextEmailBtn.addEventListener("click", async () => {
+            const email = recoveryEmail.value.trim();
+            if (!email) {
+                recoveryErrorAlert.textContent = "Please enter your email address.";
+                recoveryErrorAlert.classList.remove("hidden");
+                return;
+            }
+            recoveryErrorAlert.classList.add("hidden");
+            recoveryNextEmailBtn.disabled = true;
+            
+            try {
+                const res = await originalFetch(`/api/auth/forgot-password/question?email=${encodeURIComponent(email)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    recoveryQuestionLabel.textContent = `Security Question: ${data.question}`;
+                    
+                    recoveryStepEmail.classList.add("hidden");
+                    recoveryStepQuestion.classList.remove("hidden");
+                } else {
+                    recoveryErrorAlert.textContent = "Failed to fetch security question.";
+                    recoveryErrorAlert.classList.remove("hidden");
+                }
+            } catch (err) {
+                console.error("Recovery error:", err);
+                recoveryErrorAlert.textContent = "Connection error. Please try again.";
+                recoveryErrorAlert.classList.remove("hidden");
+            } finally {
+                recoveryNextEmailBtn.disabled = false;
+            }
+        });
+    }
+
+    if (recoveryNextAnswerBtn) {
+        recoveryNextAnswerBtn.addEventListener("click", () => {
+            const answer = recoveryAnswer.value.trim();
+            if (!answer) {
+                recoveryErrorAlert.textContent = "Please provide your answer.";
+                recoveryErrorAlert.classList.remove("hidden");
+                return;
+            }
+            recoveryErrorAlert.classList.add("hidden");
+            
+            recoveryStepQuestion.classList.add("hidden");
+            recoveryStepPassword.classList.remove("hidden");
+        });
+    }
+
+    if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = recoveryEmail.value.trim();
+            const answer = recoveryAnswer.value.trim();
+            const newPassword = recoveryNewPassword.value;
+            
+            if (!email || !answer || !newPassword) return;
+            if (newPassword.length < 6) {
+                recoveryErrorAlert.textContent = "Password must be at least 6 characters.";
+                recoveryErrorAlert.classList.remove("hidden");
+                return;
+            }
+            
+            const submitBtn = document.getElementById("recovery-submit-btn");
+            if (submitBtn) submitBtn.disabled = true;
+            recoveryErrorAlert.classList.add("hidden");
+            
+            try {
+                const res = await originalFetch("/api/auth/forgot-password/reset", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        security_answer: answer,
+                        new_password: newPassword
+                    })
+                });
+                
+                if (res.ok) {
+                    recoverySuccessAlert.textContent = "Password reset successfully! Redirecting...";
+                    recoverySuccessAlert.classList.remove("hidden");
+                    
+                    setTimeout(() => {
+                        forgotPasswordForm.classList.add("hidden");
+                        authForm.classList.remove("hidden");
+                        document.querySelector(".auth-toggle").classList.remove("hidden");
+                        document.querySelector(".auth-title").textContent = "LitSynthese";
+                        isRegisterMode = false;
+                        authEmail.value = email;
+                        authPassword.value = "";
+                        resetRecoveryWizard();
+                    }, 2000);
+                } else {
+                    const errData = await res.json();
+                    recoveryErrorAlert.textContent = errData.detail || "Verification failed.";
+                    recoveryErrorAlert.classList.remove("hidden");
+                    
+                    recoveryStepPassword.classList.add("hidden");
+                    recoveryStepQuestion.classList.remove("hidden");
+                }
+            } catch (err) {
+                console.error("Reset submit error:", err);
+                recoveryErrorAlert.textContent = "Connection error. Please try again.";
+                recoveryErrorAlert.classList.remove("hidden");
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
             }
         });
     }
