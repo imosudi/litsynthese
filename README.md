@@ -104,7 +104,7 @@ To categorise the repository on GitHub, the following topics are recommended:
 
 ---
 
-## 🪪 Licence
+##  Licence
 
 BSD 2-Clause License
 
@@ -117,7 +117,7 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND.
 
-## 👤 Author
+## Author
 
 **Isiaka Olukayode Mosudi**  
 MEng (Communications Engineering) | MSc (IoT & Smart Systems) | BEng (Electrical and Computer Engineering)  
