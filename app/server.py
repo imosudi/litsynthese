@@ -4,19 +4,26 @@ import json
 import logging
 import shutil
 import time
-from typing import List, Dict, Any
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from typing import List, Dict, Any, Optional
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Form
 from fastapi.responses import FileResponse, RedirectResponse, Response, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 import config
 from app.parser import AcademicPaperParser
 from app.llm import AcademicLLMService
+from app.database import Base, engine, get_db
+from app.models import User, Project, AcademicPaper, ChatMessage
+from app.auth import get_current_user, create_access_token
 
 # Setup logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("litsynthese.server")
+
+# Initialize database tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="LitSynthese API", version="1.0.0")
 
@@ -27,124 +34,24 @@ os.makedirs(PROJECTS_BASE_DIR, exist_ok=True)
 # Initialise LLM Service
 llm_service = AcademicLLMService()
 
-# Models
-class ChatMessage(BaseModel):
+# Pydantic Schemas
+class ChatMessageSchema(BaseModel):
     role: str # 'user' or 'assistant'
     content: str
 
 class ChatRequest(BaseModel):
     query: str
-    history: List[ChatMessage]
+    history: List[ChatMessageSchema]
     model: str = "gemini-2.5-flash"
 
 class ProjectCreate(BaseModel):
     name: str
 
-def migrate_existing_data():
-    """Migrates legacy data and converts any 'default' project to a standard UUID-based project."""
-    os.makedirs(PROJECTS_BASE_DIR, exist_ok=True)
-    
-    # 1. Convert legacy 'default' project folder to a UUID project
-    old_default_dir = os.path.join(PROJECTS_BASE_DIR, "default")
-    if os.path.exists(old_default_dir) and os.path.isdir(old_default_dir):
-        new_project_id = str(uuid.uuid4())
-        new_project_dir = os.path.join(PROJECTS_BASE_DIR, new_project_id)
-        try:
-            # Load metadata if it exists to preserve name
-            meta_path = os.path.join(old_default_dir, "metadata.json")
-            name = "Machine Learning Reviews"
-            created_at = time.time()
-            if os.path.exists(meta_path):
-                with open(meta_path, "r", encoding="utf-8") as f:
-                    meta = json.load(f)
-                    if meta.get("name") and meta.get("name") != "Default Project":
-                        name = meta.get("name")
-                    created_at = meta.get("created_at", created_at)
-            
-            # Rename the folder
-            os.rename(old_default_dir, new_project_dir)
-            
-            # Write updated metadata
-            new_meta_path = os.path.join(new_project_dir, "metadata.json")
-            with open(new_meta_path, "w", encoding="utf-8") as f:
-                json.dump({
-                    "id": new_project_id,
-                    "name": name,
-                    "created_at": created_at
-                }, f, indent=2)
-            logger.info(f"Successfully migrated old 'default' project to UUID project '{name}' ({new_project_id})")
-        except Exception as e:
-            logger.error(f"Error migrating 'default' project folder: {e}")
+class UserAuth(BaseModel):
+    email: str
+    password: str
 
-    # 2. Check if we need to initialize a fresh project
-    existing_projects = []
-    for item in os.listdir(PROJECTS_BASE_DIR):
-        item_path = os.path.join(PROJECTS_BASE_DIR, item)
-        if os.path.isdir(item_path):
-            meta_path = os.path.join(item_path, "metadata.json")
-            if os.path.exists(meta_path):
-                existing_projects.append(item)
-
-    if not existing_projects:
-        # Create initial project
-        new_id = str(uuid.uuid4())
-        new_dir = os.path.join(PROJECTS_BASE_DIR, new_id)
-        os.makedirs(os.path.join(new_dir, "uploads"), exist_ok=True)
-        os.makedirs(os.path.join(new_dir, "processed"), exist_ok=True)
-        meta = {
-            "id": new_id,
-            "name": "Machine Learning Reviews",
-            "created_at": time.time()
-        }
-        with open(os.path.join(new_dir, "metadata.json"), "w", encoding="utf-8") as f:
-            json.dump(meta, f, indent=2)
-        logger.info(f"Initialized new project '{meta['name']}' ({new_id})")
-        existing_projects.append(new_id)
-
-    # 3. Migrate any legacy unassigned uploads/processed files from root data/ to the first project
-    target_project_id = existing_projects[0]
-    target_dir = os.path.join(PROJECTS_BASE_DIR, target_project_id)
-    target_uploads = os.path.join(target_dir, "uploads")
-    target_processed = os.path.join(target_dir, "processed")
-
-    base_data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
-    legacy_uploads = os.path.join(base_data_dir, "uploads")
-    legacy_processed = os.path.join(base_data_dir, "processed")
-
-    os.makedirs(target_uploads, exist_ok=True)
-    os.makedirs(target_processed, exist_ok=True)
-
-    if os.path.exists(legacy_uploads) and os.path.isdir(legacy_uploads):
-        for f_name in os.listdir(legacy_uploads):
-            src = os.path.join(legacy_uploads, f_name)
-            dst = os.path.join(target_uploads, f_name)
-            if os.path.isfile(src):
-                try:
-                    os.rename(src, dst)
-                except Exception as e:
-                    logger.warning(f"Failed to migrate upload file {f_name}: {e}")
-
-    if os.path.exists(legacy_processed) and os.path.isdir(legacy_processed):
-        for f_name in os.listdir(legacy_processed):
-            src = os.path.join(legacy_processed, f_name)
-            dst = os.path.join(target_processed, f_name)
-            if os.path.isfile(src):
-                try:
-                    os.rename(src, dst)
-                except Exception as e:
-                    logger.warning(f"Failed to migrate processed file {f_name}: {e}")
-
-    try:
-        if os.path.exists(legacy_uploads) and not os.listdir(legacy_uploads):
-            os.rmdir(legacy_uploads)
-        if os.path.exists(legacy_processed) and not os.listdir(legacy_processed):
-            os.rmdir(legacy_processed)
-    except Exception as e:
-        logger.warning(f"Failed to clean up legacy folders: {e}")
-
-# Initialise default project on startup
-migrate_existing_data()
-
+# Helpers
 def get_project_dirs(project_id: str) -> tuple[str, str]:
     """Helper to get safe project directories and create them if needed."""
     clean_id = "".join(c for c in project_id if c.isalnum() or c in ("-", "_")).strip()
@@ -152,9 +59,6 @@ def get_project_dirs(project_id: str) -> tuple[str, str]:
         raise HTTPException(status_code=400, detail="Invalid project ID.")
         
     project_dir = os.path.join(PROJECTS_BASE_DIR, clean_id)
-    if not os.path.exists(project_dir):
-        raise HTTPException(status_code=404, detail="Project not found.")
-        
     uploads_dir = os.path.join(project_dir, "uploads")
     processed_dir = os.path.join(project_dir, "processed")
     
@@ -162,6 +66,132 @@ def get_project_dirs(project_id: str) -> tuple[str, str]:
     os.makedirs(processed_dir, exist_ok=True)
     
     return uploads_dir, processed_dir
+
+def get_user_project(project_id: str, user_id: int, db: Session) -> Project:
+    """Helper to retrieve a project, validating ownership for multi-tenant isolation."""
+    clean_id = "".join(c for c in project_id if c.isalnum() or c in ("-", "_")).strip()
+    proj = db.query(Project).filter(Project.id == clean_id, Project.user_id == user_id).first()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found or unauthorized access.")
+    return proj
+
+# Authentication Endpoints
+@app.post("/api/auth/register")
+def register_user(auth_req: UserAuth, db: Session = Depends(get_db)):
+    """Registers a new user and automatically initializes their first default project."""
+    email = auth_req.email.strip().lower()
+    password = auth_req.password
+    
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password cannot be empty.")
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
+        
+    existing_user = db.query(User).filter(User.email == email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email is already registered.")
+        
+    # Create user
+    hashed_pwd = User.hash_password(password)
+    new_user = User(email=email, hashed_password=hashed_pwd)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    # Initialize a default starting project
+    project_id = str(uuid.uuid4())
+    uploads_dir, processed_dir = get_project_dirs(project_id)
+    
+    proj = Project(id=project_id, name="Machine Learning Reviews", owner=new_user)
+    db.add(proj)
+    db.commit()
+    
+    token = create_access_token({"sub": new_user.email})
+    return {"access_token": token, "token_type": "bearer", "email": new_user.email}
+
+@app.post("/api/auth/login")
+def login_user(auth_req: UserAuth, db: Session = Depends(get_db)):
+    """Authenticates user credentials and issues a JWT token."""
+    email = auth_req.email.strip().lower()
+    password = auth_req.password
+    
+    user = db.query(User).filter(User.email == email).first()
+    if not user or not user.verify_password(password):
+        raise HTTPException(status_code=401, detail="Incorrect email or password.")
+        
+    token = create_access_token({"sub": user.email})
+    return {"access_token": token, "token_type": "bearer", "email": user.email}
+
+class ProfileUpdate(BaseModel):
+    institution: Optional[str] = None
+    research_domain: Optional[str] = None
+    research_topic: Optional[str] = None
+    theme: Optional[str] = None
+
+@app.get("/api/auth/me")
+def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Returns the profile information of the authorized active session."""
+    if not current_user.profile:
+        profile = UserProfile(
+            user_id=current_user.id,
+            theme="dark",
+            institution="N/A",
+            research_domain="N/A",
+            research_topic="N/A"
+        )
+        db.add(profile)
+        db.commit()
+        db.refresh(current_user)
+        
+    return {
+        "email": current_user.email,
+        "id": current_user.id,
+        "profile": {
+            "theme": current_user.profile.theme,
+            "institution": current_user.profile.institution or "N/A",
+            "research_domain": current_user.profile.research_domain or "N/A",
+            "research_topic": current_user.profile.research_topic or "N/A"
+        }
+    }
+
+@app.post("/api/profile/update")
+def update_profile(
+    req: ProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Updates the user profile metadata or active theme selection."""
+    if not current_user.profile:
+        current_user.profile = UserProfile(
+            user_id=current_user.id,
+            theme="dark",
+            institution="N/A",
+            research_domain="N/A",
+            research_topic="N/A"
+        )
+        db.add(current_user.profile)
+        
+    if req.institution is not None:
+        current_user.profile.institution = req.institution.strip()
+    if req.research_domain is not None:
+        current_user.profile.research_domain = req.research_domain.strip()
+    if req.research_topic is not None:
+        current_user.profile.research_topic = req.research_topic.strip()
+    if req.theme is not None:
+        current_user.profile.theme = req.theme.strip()
+        
+    db.commit()
+    db.refresh(current_user)
+    
+    return {
+        "status": "success",
+        "profile": {
+            "theme": current_user.profile.theme,
+            "institution": current_user.profile.institution,
+            "research_domain": current_user.profile.research_domain,
+            "research_topic": current_user.profile.research_topic
+        }
+    }
 
 @app.get("/api/api-status")
 async def get_api_status():
@@ -183,91 +213,86 @@ async def serve_index():
 
 # Project management endpoints
 @app.get("/api/projects")
-async def list_projects():
-    """Lists all available review projects."""
-    projects = []
-    for item in os.listdir(PROJECTS_BASE_DIR):
-        item_path = os.path.join(PROJECTS_BASE_DIR, item)
-        if os.path.isdir(item_path):
-            meta_path = os.path.join(item_path, "metadata.json")
-            if os.path.exists(meta_path):
-                try:
-                    with open(meta_path, "r", encoding="utf-8") as f:
-                        meta = json.load(f)
-                        projects.append(meta)
-                except Exception as e:
-                    logger.error(f"Error reading project metadata for {item}: {e}")
-                    
-    # If no projects exist, initialize a new default one on the fly
-    if not projects:
+async def list_projects(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Lists all available review projects for the authorized user."""
+    user_projects = db.query(Project).filter(Project.user_id == current_user.id).all()
+    
+    # If no projects exist, initialize a default one on the fly for them
+    if not user_projects:
         project_id = str(uuid.uuid4())
-        project_dir = os.path.join(PROJECTS_BASE_DIR, project_id)
-        os.makedirs(os.path.join(project_dir, "uploads"), exist_ok=True)
-        os.makedirs(os.path.join(project_dir, "processed"), exist_ok=True)
-        meta = {
-            "id": project_id,
-            "name": "Machine Learning Reviews",
-            "created_at": time.time()
-        }
-        with open(os.path.join(project_dir, "metadata.json"), "w", encoding="utf-8") as f:
-            json.dump(meta, f, indent=2)
-        projects.append(meta)
+        get_project_dirs(project_id)
+        
+        proj = Project(id=project_id, name="Machine Learning Reviews", owner=current_user)
+        db.add(proj)
+        db.commit()
+        db.refresh(proj)
+        user_projects = [proj]
         
     # Sort projects by creation time
-    projects.sort(key=lambda x: x.get("created_at", 0))
-    return projects
+    user_projects.sort(key=lambda x: x.created_at)
+    return [{"id": p.id, "name": p.name, "created_at": p.created_at.timestamp()} for p in user_projects]
 
 @app.post("/api/projects")
-async def create_project(req: ProjectCreate):
+async def create_project(
+    req: ProjectCreate, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
     """Creates a new isolated review project."""
     name = req.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="Project name cannot be empty.")
         
     project_id = str(uuid.uuid4())
-    project_dir = os.path.join(PROJECTS_BASE_DIR, project_id)
+    get_project_dirs(project_id)
     
-    os.makedirs(os.path.join(project_dir, "uploads"), exist_ok=True)
-    os.makedirs(os.path.join(project_dir, "processed"), exist_ok=True)
+    proj = Project(id=project_id, name=name, owner=current_user)
+    db.add(proj)
+    db.commit()
+    db.refresh(proj)
     
-    meta = {
-        "id": project_id,
-        "name": name,
-        "created_at": time.time()
-    }
-    
-    with open(os.path.join(project_dir, "metadata.json"), "w", encoding="utf-8") as f:
-        json.dump(meta, f, indent=2)
-        
-    return meta
+    return {"id": proj.id, "name": proj.name, "created_at": proj.created_at.timestamp()}
 
 @app.delete("/api/project/{project_id}")
-async def delete_project(project_id: str):
+async def delete_project(
+    project_id: str, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
     """Deletes a review project and all its uploaded papers/summaries."""
-    clean_id = "".join(c for c in project_id if c.isalnum() or c in ("-", "_")).strip()
-    if not clean_id:
-        raise HTTPException(status_code=400, detail="Invalid project ID.")
-        
-    project_dir = os.path.join(PROJECTS_BASE_DIR, clean_id)
-    if not os.path.exists(project_dir):
-        raise HTTPException(status_code=404, detail="Project not found.")
-        
+    proj = get_user_project(project_id, current_user.id, db)
+    project_dir = os.path.join(PROJECTS_BASE_DIR, proj.id)
+    
     try:
-        shutil.rmtree(project_dir)
-        logger.info(f"Deleted project {clean_id}")
-        return {"status": "success", "message": f"Project {clean_id} deleted."}
+        # Cascade delete from database
+        db.delete(proj)
+        db.commit()
+        
+        # Clean filesystem
+        if os.path.exists(project_dir):
+            shutil.rmtree(project_dir)
+            
+        logger.info(f"Deleted project {project_id}")
+        return {"status": "success", "message": f"Project {project_id} deleted."}
     except Exception as e:
-        logger.exception("Error deleting project directory")
+        logger.exception("Error deleting project")
         raise HTTPException(status_code=500, detail=f"Failed to delete project: {str(e)}")
 
 # Isolated paper endpoints
 @app.post("/api/project/{project_id}/upload")
-async def upload_paper(project_id: str, model: str = "gemini-2.5-flash", file: UploadFile = File(...)):
+async def upload_paper(
+    project_id: str, 
+    model: str = "gemini-2.5-flash", 
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Receives PDF file, parses sections, generates LLM summary, caches, and returns analysis ID."""
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
         
-    uploads_dir, processed_dir = get_project_dirs(project_id)
+    proj = get_user_project(project_id, current_user.id, db)
+    uploads_dir, processed_dir = get_project_dirs(proj.id)
     
     paper_id = str(uuid.uuid4())
     pdf_path = os.path.join(uploads_dir, f"{paper_id}.pdf")
@@ -314,70 +339,134 @@ async def upload_paper(project_id: str, model: str = "gemini-2.5-flash", file: U
         with open(result_path, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)
             
+        # Register paper entry in database
+        meta = parsed_data["metadata"]
+        new_paper = AcademicPaper(
+            id=paper_id,
+            project=proj,
+            title=meta.get("title", "Untitled Paper"),
+            authors=meta.get("authors", "Unknown Authors"),
+            year=meta.get("year"),
+            pages_count=meta.get("pages_count"),
+            file_path=pdf_path,
+            processed_path=result_path
+        )
+        db.add(new_paper)
+        db.commit()
+        
         logger.info(f"Paper {paper_id} successfully parsed and analysed inside project {project_id}.")
         return {"id": paper_id, "metadata": parsed_data["metadata"], "analysis": analysis}
         
     except Exception as e:
         logger.exception("Error processing PDF upload")
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
         raise HTTPException(status_code=500, detail=f"Failed to process PDF: {str(e)}")
 
 @app.get("/api/project/{project_id}/papers")
-async def list_papers(project_id: str):
+async def list_papers(
+    project_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Lists all successfully processed papers within a specific project."""
-    _, processed_dir = get_project_dirs(project_id)
-    papers = []
-    for filename in os.listdir(processed_dir):
-        if filename.endswith(".json"):
+    proj = get_user_project(project_id, current_user.id, db)
+    papers = db.query(AcademicPaper).filter(AcademicPaper.project_id == proj.id).all()
+    
+    result = []
+    for p in papers:
+        # Load keywords from cache JSON if available
+        keywords = []
+        if p.processed_path and os.path.exists(p.processed_path):
             try:
-                path = os.path.join(processed_dir, filename)
-                with open(path, "r", encoding="utf-8") as f:
+                with open(p.processed_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    papers.append({
-                        "id": data["id"],
-                        "filename": data["filename"],
-                        "title": data["metadata"]["title"],
-                        "authors": data["metadata"]["authors"],
-                        "year": data["metadata"]["year"],
-                        "pages_count": data["metadata"]["pages_count"],
-                        "keywords": data["analysis"].get("keywords", [])
-                    })
-            except Exception as e:
-                logger.error(f"Error reading summary file {filename}: {e}")
-    return papers
+                    keywords = data.get("analysis", {}).get("keywords", [])
+            except Exception:
+                pass
+                
+        result.append({
+            "id": p.id,
+            "filename": os.path.basename(p.file_path),
+            "title": p.title,
+            "authors": p.authors,
+            "year": p.year,
+            "pages_count": p.pages_count,
+            "keywords": keywords
+        })
+    return result
 
 @app.get("/api/project/{project_id}/paper/{paper_id}")
-async def get_paper(project_id: str, paper_id: str):
+async def get_paper(
+    project_id: str, 
+    paper_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Retrieves full analysis details of a specific paper inside a project."""
-    _, processed_dir = get_project_dirs(project_id)
+    proj = get_user_project(project_id, current_user.id, db)
+    paper = db.query(AcademicPaper).filter(
+        AcademicPaper.id == paper_id, 
+        AcademicPaper.project_id == proj.id
+    ).first()
     
-    clean_paper_id = "".join(c for c in paper_id if c.isalnum() or c in ("-", "_")).strip()
-    if not clean_paper_id:
-        raise HTTPException(status_code=400, detail="Invalid paper ID.")
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found in project.")
         
-    path = os.path.join(processed_dir, f"{clean_paper_id}.json")
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="Paper analysis not found.")
+    if not paper.processed_path or not os.path.exists(paper.processed_path):
+        raise HTTPException(status_code=404, detail="Paper analysis data not found.")
         
-    with open(path, "r", encoding="utf-8") as f:
+    with open(paper.processed_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-@app.post("/api/project/{project_id}/paper/{paper_id}/chat")
-async def chat_paper(project_id: str, paper_id: str, request: ChatRequest):
-    """Asks a question about the paper in a context-grounded conversation."""
-    _, processed_dir = get_project_dirs(project_id)
+# Isolated chat endpoints
+@app.get("/api/project/{project_id}/paper/{paper_id}/chat")
+async def get_chat_history(
+    project_id: str,
+    paper_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retrieves chat message history for a specific paper."""
+    proj = get_user_project(project_id, current_user.id, db)
+    paper = db.query(AcademicPaper).filter(
+        AcademicPaper.id == paper_id,
+        AcademicPaper.project_id == proj.id
+    ).first()
     
-    clean_paper_id = "".join(c for c in paper_id if c.isalnum() or c in ("-", "_")).strip()
-    if not clean_paper_id:
-        raise HTTPException(status_code=400, detail="Invalid paper ID.")
-        
-    path = os.path.join(processed_dir, f"{clean_paper_id}.json")
-    if not os.path.exists(path):
+    if not paper:
         raise HTTPException(status_code=404, detail="Paper not found.")
         
-    with open(path, "r", encoding="utf-8") as f:
+    db_history = db.query(ChatMessage).filter(ChatMessage.paper_id == paper.id).order_by(ChatMessage.created_at.asc()).all()
+    return [{"role": msg.role, "content": msg.content} for msg in db_history]
+
+@app.post("/api/project/{project_id}/paper/{paper_id}/chat")
+async def chat_paper(
+    project_id: str, 
+    paper_id: str, 
+    request: ChatRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Asks a question about the paper in a context-grounded conversation."""
+    proj = get_user_project(project_id, current_user.id, db)
+    paper = db.query(AcademicPaper).filter(
+        AcademicPaper.id == paper_id, 
+        AcademicPaper.project_id == proj.id
+    ).first()
+    
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found.")
+        
+    if not paper.processed_path or not os.path.exists(paper.processed_path):
+        raise HTTPException(status_code=404, detail="Paper not found.")
+        
+    with open(paper.processed_path, "r", encoding="utf-8") as f:
         data = json.load(f)
         
-    history_dicts = [{"role": msg.role, "content": msg.content} for msg in request.history]
+    # Fetch previous chat history from DB
+    db_history = db.query(ChatMessage).filter(ChatMessage.paper_id == paper.id).order_by(ChatMessage.created_at.asc()).all()
+    history_dicts = [{"role": msg.role, "content": msg.content} for msg in db_history]
     
     reply = llm_service.chat_about_paper(
         title=data["metadata"]["title"],
@@ -387,22 +476,33 @@ async def chat_paper(project_id: str, paper_id: str, request: ChatRequest):
         model=request.model
     )
     
+    # Save user message and assistant reply to DB
+    user_msg = ChatMessage(paper=paper, role="user", content=request.query)
+    assistant_msg = ChatMessage(paper=paper, role="assistant", content=reply)
+    db.add(user_msg)
+    db.add(assistant_msg)
+    db.commit()
+    
     return {"reply": reply}
 
 @app.get("/api/project/{project_id}/paper/{paper_id}/export")
-async def export_paper_summary(project_id: str, paper_id: str):
+async def export_paper_summary(
+    project_id: str, 
+    paper_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Exports structured paper analysis as a markdown file."""
-    _, processed_dir = get_project_dirs(project_id)
+    proj = get_user_project(project_id, current_user.id, db)
+    paper = db.query(AcademicPaper).filter(
+        AcademicPaper.id == paper_id, 
+        AcademicPaper.project_id == proj.id
+    ).first()
     
-    clean_paper_id = "".join(c for c in paper_id if c.isalnum() or c in ("-", "_")).strip()
-    if not clean_paper_id:
-        raise HTTPException(status_code=400, detail="Invalid paper ID.")
-        
-    path = os.path.join(processed_dir, f"{clean_paper_id}.json")
-    if not os.path.exists(path):
+    if not paper or not paper.processed_path or not os.path.exists(paper.processed_path):
         raise HTTPException(status_code=404, detail="Paper not found.")
         
-    with open(path, "r", encoding="utf-8") as f:
+    with open(paper.processed_path, "r", encoding="utf-8") as f:
         data = json.load(f)
         
     meta = data["metadata"]

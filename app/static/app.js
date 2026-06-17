@@ -1,8 +1,39 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Intercept fetch to automatically add Authorization token and handle 401s
+    const originalFetch = window.fetch;
+    window.fetch = async function (url, options) {
+        options = options || {};
+        options.headers = options.headers || {};
+        
+        const token = localStorage.getItem("access_token");
+        if (token) {
+            options.headers["Authorization"] = `Bearer ${token}`;
+        }
+        
+        try {
+            const response = await originalFetch(url, options);
+            if (response.status === 401) {
+                // If unauthorized and not auth-related call, log out
+                if (!url.includes("/api/auth/login") && !url.includes("/api/auth/register")) {
+                    logout();
+                }
+            }
+            return response;
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    function logout() {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("user_email");
+        showAuthOverlay();
+    }
+
     // Application State
     const state = {
         projects: [],
-        selectedProjectId: localStorage.getItem("selectedProjectId") || "default",
+        selectedProjectId: localStorage.getItem("selectedProjectId") || "",
         selectedModelId: localStorage.getItem("selectedModelId") || "gemini",
         papers: [],
         selectedPaper: null,
@@ -69,7 +100,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const indicatorGroq = document.getElementById("indicator-groq");
     const indicatorOpenrouter = document.getElementById("indicator-openrouter");
 
-    // Theme names map - professional & relevant to scientific research assistant themes
+    // Auth DOM Elements
+    const authOverlay = document.getElementById("auth-overlay");
+    const authForm = document.getElementById("auth-form");
+    const authEmail = document.getElementById("auth-email");
+    const authPassword = document.getElementById("auth-password");
+    const authSubmitBtn = document.getElementById("auth-submit-btn");
+    const authToggleBtn = document.getElementById("auth-toggle-btn");
+    const authToggleText = document.getElementById("auth-toggle-text");
+    const authErrorAlert = document.getElementById("auth-error-alert");
+
+    // Profile View edit elements
+    const editProfileBtn = document.getElementById("edit-profile-btn");
+    const cancelProfileBtn = document.getElementById("cancel-profile-btn");
+    const saveProfileBtn = document.getElementById("save-profile-btn");
+    const profileInfoView = document.getElementById("profile-info-view");
+    const profileInfoForm = document.getElementById("profile-info-form");
+    const logoutBtn = document.getElementById("logout-btn");
+
+    let isRegisterMode = false;
+
+    // Theme names map
     const themeNames = {
         "dark": "Amethyst Dark",
         "light": "Lumina Light",
@@ -81,12 +132,213 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const themeFlashNameLabel = document.getElementById("theme-flash-name");
 
+    // Authentication UI Logic
+    function showAuthOverlay() {
+        if (authOverlay) authOverlay.classList.remove("hidden");
+    }
+
+    function hideAuthOverlay() {
+        if (authOverlay) authOverlay.classList.add("hidden");
+    }
+
+    if (authToggleBtn) {
+        authToggleBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            isRegisterMode = !isRegisterMode;
+            if (isRegisterMode) {
+                document.querySelector(".auth-title").textContent = "Register";
+                authToggleText.textContent = "Already have an account?";
+                authToggleBtn.textContent = "Sign In";
+                authSubmitBtn.textContent = "Create Account";
+            } else {
+                document.querySelector(".auth-title").textContent = "LitSynthese";
+                authToggleText.textContent = "New to LitSynthese?";
+                authToggleBtn.textContent = "Create an Account";
+                authSubmitBtn.textContent = "Sign In";
+            }
+            authErrorAlert.classList.add("hidden");
+        });
+    }
+
+    if (authForm) {
+        authForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = authEmail.value.trim();
+            const password = authPassword.value;
+            
+            if (!email || !password) return;
+            
+            authSubmitBtn.disabled = true;
+            authSubmitBtn.textContent = isRegisterMode ? "Registering..." : "Signing In...";
+            authErrorAlert.classList.add("hidden");
+            
+            const endpoint = isRegisterMode ? "/api/auth/register" : "/api/auth/login";
+            
+            try {
+                const res = await originalFetch(endpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem("access_token", data.access_token);
+                    localStorage.setItem("user_email", data.email);
+                    
+                    hideAuthOverlay();
+                    
+                    // Fetch profile info and load dashboard data
+                    await fetchUserProfile();
+                    await fetchProjectsList();
+                    await fetchPapersList();
+                } else {
+                    const errData = await res.json();
+                    authErrorAlert.textContent = errData.detail || "Authentication failed.";
+                    authErrorAlert.classList.remove("hidden");
+                }
+            } catch (err) {
+                console.error("Auth error:", err);
+                authErrorAlert.textContent = "Connection error. Please try again.";
+                authErrorAlert.classList.remove("hidden");
+            } finally {
+                authSubmitBtn.disabled = false;
+                authSubmitBtn.textContent = isRegisterMode ? "Create Account" : "Sign In";
+            }
+        });
+    }
+
+    // Profile Customisation Logic
+    async function fetchUserProfile() {
+        try {
+            const res = await fetch("/api/auth/me");
+            if (res.ok) {
+                const data = await res.json();
+                
+                // Set avatar initials
+                const initial = (data.email[0] || 'R').toUpperCase();
+                const avatarInit = document.getElementById("profile-avatar-initial");
+                if (avatarInit) avatarInit.textContent = initial;
+                
+                const emailDisp = document.getElementById("profile-email-display");
+                if (emailDisp) emailDisp.textContent = data.email;
+                
+                // Fill profile card details
+                const profile = data.profile || {};
+                const instVal = document.getElementById("profile-institution-val");
+                if (instVal) instVal.textContent = profile.institution || "N/A";
+                
+                const domVal = document.getElementById("profile-domain-val");
+                if (domVal) domVal.textContent = profile.research_domain || "N/A";
+                
+                const topicVal = document.getElementById("profile-topic-val");
+                if (topicVal) topicVal.textContent = profile.research_topic || "N/A";
+                
+                // Pre-populate input fields
+                const editInst = document.getElementById("edit-institution");
+                if (editInst) editInst.value = profile.institution || "";
+                
+                const editDom = document.getElementById("edit-domain");
+                if (editDom) editDom.value = profile.research_domain || "";
+                
+                const editTopic = document.getElementById("edit-topic");
+                if (editTopic) editTopic.value = profile.research_topic || "";
+                
+                // If backend theme matches user's preferred theme, set it.
+                if (profile.theme && profile.theme !== state.currentTheme) {
+                    setApplicationTheme(profile.theme, false);
+                }
+            }
+        } catch (e) {
+            console.error("Error fetching user profile", e);
+        }
+    }
+
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener("click", () => {
+            if (profileInfoView) profileInfoView.classList.add("hidden");
+            if (profileInfoForm) profileInfoForm.classList.remove("hidden");
+        });
+    }
+
+    if (cancelProfileBtn) {
+        cancelProfileBtn.addEventListener("click", () => {
+            if (profileInfoView) profileInfoView.classList.remove("hidden");
+            if (profileInfoForm) profileInfoForm.classList.add("hidden");
+        });
+    }
+
+    if (profileInfoForm) {
+        profileInfoForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const institution = document.getElementById("edit-institution").value.trim();
+            const research_domain = document.getElementById("edit-domain").value.trim();
+            const research_topic = document.getElementById("edit-topic").value.trim();
+            
+            try {
+                const res = await fetch("/api/profile/update", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        institution,
+                        research_domain,
+                        research_topic,
+                        theme: state.currentTheme
+                    })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    
+                    const instVal = document.getElementById("profile-institution-val");
+                    if (instVal) instVal.textContent = data.profile.institution || "N/A";
+                    
+                    const domVal = document.getElementById("profile-domain-val");
+                    if (domVal) domVal.textContent = data.profile.research_domain || "N/A";
+                    
+                    const topicVal = document.getElementById("profile-topic-val");
+                    if (topicVal) topicVal.textContent = data.profile.research_topic || "N/A";
+                    
+                    if (profileInfoView) profileInfoView.classList.remove("hidden");
+                    if (profileInfoForm) profileInfoForm.classList.add("hidden");
+                } else {
+                    alert("Failed to update profile.");
+                }
+            } catch (err) {
+                console.error("Error updating profile:", err);
+                alert("Connection error while updating profile.");
+            }
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+            logout();
+        });
+    }
+
     // Initialise Theme and Persistence
     function setApplicationTheme(themeVal, triggerFlash = false) {
         state.currentTheme = themeVal;
         document.documentElement.setAttribute("data-theme", themeVal);
         localStorage.setItem("theme", themeVal);
         
+        // Sync theme preference with backend if logged in
+        if (localStorage.getItem("access_token")) {
+            fetch("/api/profile/update", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ theme: themeVal })
+            }).catch(err => console.error("Error saving theme to backend:", err));
+        }
+
         if (triggerFlash && themeFlashNameLabel) {
             themeFlashNameLabel.textContent = themeNames[themeVal] || themeVal;
             themeFlashNameLabel.classList.add("show");
@@ -216,6 +468,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderProjectsDropdown() {
+        if (!projectSelect) return;
         projectSelect.innerHTML = "";
         state.projects.forEach(proj => {
             const opt = document.createElement("option");
@@ -359,6 +612,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", `/api/project/${state.selectedProjectId}/upload?model=${state.selectedModelId}`, true);
 
+        // Inject Authorization Bearer token into raw XMLHttpRequest
+        const token = localStorage.getItem("access_token");
+        if (token) {
+            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        }
+
         // Track upload progress
         xhr.upload.addEventListener("progress", (e) => {
             if (e.lengthComputable) {
@@ -409,6 +668,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. Fetch Ingested Papers List
     async function fetchPapersList() {
+        if (!state.selectedProjectId) return;
         try {
             const res = await fetch(`/api/project/${state.selectedProjectId}/papers`);
             if (res.ok) {
@@ -452,6 +712,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Toggle view states
                 switchView("dashboard");
                 
+                // Fetch dynamic chat history from database
+                try {
+                    const chatRes = await fetch(`/api/project/${state.selectedProjectId}/paper/${id}/chat`);
+                    if (chatRes.ok) {
+                        state.chatHistories[id] = await chatRes.json();
+                    } else {
+                        state.chatHistories[id] = [];
+                    }
+                } catch (chatErr) {
+                    console.error("Error loading chat history:", chatErr);
+                    state.chatHistories[id] = [];
+                }
+
                 // Render paper contents
                 renderPaperHeader();
                 renderSummaryTab();
@@ -474,8 +747,33 @@ document.addEventListener("DOMContentLoaded", () => {
         paperYear.textContent = state.selectedPaper.metadata.year;
         paperPages.textContent = `${state.selectedPaper.metadata.pages_count} pages`;
         
-        exportBtn.onclick = () => {
-            window.location.href = `/api/project/${state.selectedProjectId}/paper/${state.selectedPaper.id}/export`;
+        exportBtn.onclick = async () => {
+            try {
+                const res = await fetch(`/api/project/${state.selectedProjectId}/paper/${state.selectedPaper.id}/export`);
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    
+                    const contentDisposition = res.headers.get("content-disposition");
+                    let filename = `Summary_${state.selectedPaper.metadata.title.replace(/\s+/g, "_")}.md`;
+                    if (contentDisposition) {
+                        const match = contentDisposition.match(/filename=(.+)/);
+                        if (match && match[1]) filename = match[1];
+                    }
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    alert("Failed to export summary.");
+                }
+            } catch (err) {
+                console.error("Export error:", err);
+                alert("Connection error during export.");
+            }
         };
     }
 
@@ -692,8 +990,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Initialise loading sequence
-    fetchProjectsList().then(() => {
-        fetchPapersList();
-    });
+    // Initialise loading sequence based on authentication status
+    const token = localStorage.getItem("access_token");
+    if (token) {
+        hideAuthOverlay();
+        fetchUserProfile();
+        fetchProjectsList().then(() => {
+            fetchPapersList();
+        });
+    } else {
+        showAuthOverlay();
+    }
 });

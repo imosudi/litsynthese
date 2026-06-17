@@ -25,6 +25,12 @@ class User(Base):
         back_populates="owner", 
         cascade="all, delete-orphan"
     )
+    profile: Mapped[Optional["UserProfile"]] = relationship(
+        "UserProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
 
     def verify_password(self, password: str) -> bool:
         """Verifies a plaintext password against the stored hashed password."""
@@ -104,3 +110,18 @@ class ChatMessage(Base):
 
     # Relationships
     paper: Mapped["AcademicPaper"] = relationship("AcademicPaper", back_populates="chat_messages")
+
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    theme: Mapped[str] = mapped_column(String(50), default="dark")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    institution: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    research_domain: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    research_topic: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="profile")
