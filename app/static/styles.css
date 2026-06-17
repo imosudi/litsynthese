@@ -41,6 +41,90 @@
     --card-hover: rgba(0, 0, 0, 0.03);
 }
 
+:root[data-theme="google"] {
+    --bg-primary: #0f1015;
+    --bg-secondary: #171923;
+    --border-color: rgba(66, 133, 244, 0.15);
+    --glass-bg: rgba(23, 25, 35, 0.85);
+    --glass-border: rgba(66, 133, 244, 0.2);
+    --glass-shadow: rgba(0, 0, 0, 0.6);
+    --text-primary: #e8eaed;
+    --text-secondary: #9aa0a6;
+    --accent-color: #4285f4;
+    --accent-gradient: linear-gradient(135deg, #4285f4, #ea4335, #fabc05, #34a853);
+    --accent-hover: #1a73e8;
+    --accent-glow: rgba(66, 133, 244, 0.4);
+    --crit-color: #ea4335;
+    --crit-bg: rgba(234, 67, 53, 0.08);
+    --future-color: #34a853;
+    --future-bg: rgba(52, 168, 83, 0.08);
+    --card-bg: rgba(66, 133, 244, 0.03);
+    --card-hover: rgba(66, 133, 244, 0.07);
+}
+
+:root[data-theme="samsung"] {
+    --bg-primary: #000000;
+    --bg-secondary: #08080c;
+    --border-color: rgba(162, 0, 255, 0.12);
+    --glass-bg: rgba(8, 8, 12, 0.9);
+    --glass-border: rgba(162, 0, 255, 0.2);
+    --glass-shadow: rgba(0, 0, 0, 0.8);
+    --text-primary: #ffffff;
+    --text-secondary: #8e94a5;
+    --accent-color: #a200ff;
+    --accent-gradient: linear-gradient(135deg, #a200ff, #ff007f, #00f0ff);
+    --accent-hover: #8200cc;
+    --accent-glow: rgba(162, 0, 255, 0.45);
+    --crit-color: #ff3366;
+    --crit-bg: rgba(255, 51, 102, 0.08);
+    --future-color: #00f0ff;
+    --future-bg: rgba(0, 240, 255, 0.08);
+    --card-bg: rgba(162, 0, 255, 0.02);
+    --card-hover: rgba(162, 0, 255, 0.06);
+}
+
+:root[data-theme="microsoft"] {
+    --bg-primary: #111111;
+    --bg-secondary: #1e1e1e;
+    --border-color: rgba(0, 188, 242, 0.15);
+    --glass-bg: rgba(30, 30, 30, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: rgba(0, 0, 0, 0.5);
+    --text-primary: #f5f5f5;
+    --text-secondary: #a0a0a0;
+    --accent-color: #0078d4;
+    --accent-gradient: linear-gradient(135deg, #0078d4, #00bcf2, #7fba00);
+    --accent-hover: #005a9e;
+    --accent-glow: rgba(0, 120, 212, 0.35);
+    --crit-color: #e81123;
+    --crit-bg: rgba(232, 17, 35, 0.08);
+    --future-color: #107c41;
+    --future-bg: rgba(16, 124, 65, 0.08);
+    --card-bg: rgba(255, 255, 255, 0.02);
+    --card-hover: rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme="hyundai"] {
+    --bg-primary: #001c3d;
+    --bg-secondary: #002c5f;
+    --border-color: rgba(0, 170, 210, 0.2);
+    --glass-bg: rgba(0, 44, 95, 0.85);
+    --glass-border: rgba(0, 170, 210, 0.25);
+    --glass-shadow: rgba(0, 0, 0, 0.6);
+    --text-primary: #ffffff;
+    --text-secondary: #a0b2c6;
+    --accent-color: #00aad2;
+    --accent-gradient: linear-gradient(135deg, #002c5f, #00aad2, #8c969e);
+    --accent-hover: #008eb0;
+    --accent-glow: rgba(0, 170, 210, 0.4);
+    --crit-color: #ff4d4d;
+    --crit-bg: rgba(255, 77, 77, 0.08);
+    --future-color: #00ffd0;
+    --future-bg: rgba(0, 255, 208, 0.08);
+    --card-bg: rgba(0, 170, 210, 0.04);
+    --card-hover: rgba(0, 170, 210, 0.08);
+}
+
 /* Reset and Base Styles */
 * {
     margin: 0;
@@ -1076,5 +1160,237 @@ body {
 .progress-bar {
     background: var(--accent-gradient) !important;
     border-radius: 4px !important;
+}
+
+/* Sidebar Navigation Menu */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 20px 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 12px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.nav-item:hover {
+    background: var(--card-hover);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background: var(--accent-glow);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.nav-item svg {
+    opacity: 0.8;
+}
+
+.nav-item.active svg {
+    opacity: 1;
+    color: var(--accent-color);
+}
+
+/* Profile View Container */
+.profile-container {
+    padding: 40px;
+    height: 100%;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.profile-header h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* User Profile Card */
+.profile-avatar-wrapper {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    padding: 3px;
+    background: var(--accent-gradient);
+    box-shadow: 0 8px 20px var(--accent-glow);
+}
+
+.avatar-gradient {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.text-accent {
+    color: var(--accent-color);
+}
+
+.stat-box {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    transition: border-color 0.2s ease;
+}
+
+.stat-box:hover {
+    border-color: var(--accent-color);
+}
+
+.stat-num {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.bg-success-glow {
+    background: rgba(52, 211, 153, 0.1) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(52, 211, 153, 0.2) !important;
+}
+
+/* Theme Option Cards */
+.theme-card-option {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
+}
+
+.theme-card-option:hover {
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.theme-card-option.active {
+    border-color: var(--accent-color) !important;
+    background: var(--card-hover) !important;
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.theme-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.theme-dots .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Company specific dot colors */
+.theme-dots.google .blue { background-color: #4285f4; }
+.theme-dots.google .red { background-color: #ea4335; }
+.theme-dots.google .yellow { background-color: #fabc05; }
+.theme-dots.google .green { background-color: #34a853; }
+
+.theme-dots.samsung .violet { background-color: #a200ff; }
+.theme-dots.samsung .pink { background-color: #ff007f; }
+.theme-dots.samsung .cyan { background-color: #00f0ff; }
+
+.theme-dots.microsoft .blue { background-color: #0078d4; }
+.theme-dots.microsoft .teal { background-color: #00bcf2; }
+.theme-dots.microsoft .green { background-color: #7fba00; }
+
+.theme-dots.hyundai .navy { background-color: #002c5f; }
+.theme-dots.hyundai .silver { background-color: #8c969e; }
+.theme-dots.hyundai .cyan { background-color: #00aad2; }
+
+.theme-dots.default-dark .indigo { background-color: #6366f1; }
+.theme-dots.default-dark .purple { background-color: #8b5cf6; }
+.theme-dots.default-dark .magenta { background-color: #d946ef; }
+
+.theme-dots.default-light .indigo { background-color: #4f46e5; }
+.theme-dots.default-light .purple { background-color: #7c3aed; }
+.theme-dots.default-light .white { background-color: #ffffff; border: 1px solid #ddd; }
+
+.theme-card-desc {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* API Status Box */
+.api-status-box {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.status-indicator-badge {
+    font-size: 0.72rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    background: rgba(248, 113, 113, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.status-indicator-badge.active {
+    background: rgba(52, 211, 153, 0.1);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.15);
+}
+
+/* Welcome Page Hero Layout Improvements */
+.welcome-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.logo-large {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 90px;
+    height: 90px;
+    border-radius: 24px;
+    background: var(--accent-gradient);
+    color: #ffffff;
+    margin-bottom: 24px;
+    box-shadow: 0 12px 30px var(--accent-glow);
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
 }
 

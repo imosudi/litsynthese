@@ -55,15 +55,140 @@ document.addEventListener("DOMContentLoaded", () => {
     // Keywords Tab Elements
     const keywordsCloud = document.getElementById("keywords-cloud");
 
-    // Initialise Theme
-    document.documentElement.setAttribute("data-theme", state.currentTheme);
+    // Sidebar Navigation Elements
+    const navDashboard = document.getElementById("nav-dashboard");
+    const navProfile = document.getElementById("nav-profile");
+    const profileView = document.getElementById("profile-view");
 
-    // Theme Toggle Handler
-    themeToggle.addEventListener("click", () => {
-        state.currentTheme = state.currentTheme === "dark" ? "light" : "dark";
-        document.documentElement.setAttribute("data-theme", state.currentTheme);
-        localStorage.setItem("theme", state.currentTheme);
+    // Profile View stats elements
+    const statProjectsCount = document.getElementById("stat-projects-count");
+    const statPapersCount = document.getElementById("stat-papers-count");
+
+    // Indicators
+    const indicatorGemini = document.getElementById("indicator-gemini");
+    const indicatorGroq = document.getElementById("indicator-groq");
+    const indicatorOpenrouter = document.getElementById("indicator-openrouter");
+
+    // Theme Select Cards
+    const themeCards = document.querySelectorAll(".theme-card-option");
+
+    // Initialise Theme and Persistence
+    function setApplicationTheme(themeVal) {
+        state.currentTheme = themeVal;
+        document.documentElement.setAttribute("data-theme", themeVal);
+        localStorage.setItem("theme", themeVal);
+        
+        // Update active class on theme cards
+        themeCards.forEach(card => {
+            if (card.getAttribute("data-theme-value") === themeVal) {
+                card.classList.add("active");
+            } else {
+                card.classList.remove("active");
+            }
+        });
+    }
+
+    setApplicationTheme(state.currentTheme);
+
+    // Theme Toggle Handler (Cycles through available themes)
+    const availableThemes = ["dark", "light", "google", "samsung", "microsoft", "hyundai"];
+    if (themeToggle) {
+        themeToggle.addEventListener("click", () => {
+            let currentIndex = availableThemes.indexOf(state.currentTheme);
+            let nextIndex = (currentIndex + 1) % availableThemes.length;
+            setApplicationTheme(availableThemes[nextIndex]);
+        });
+    }
+
+    // Theme Card Click Listeners
+    themeCards.forEach(card => {
+        card.addEventListener("click", () => {
+            const themeVal = card.getAttribute("data-theme-value");
+            setApplicationTheme(themeVal);
+        });
     });
+
+    // View Switching Logic
+    function switchView(viewName) {
+        if (viewName === "dashboard") {
+            if (navDashboard) navDashboard.classList.add("active");
+            if (navProfile) navProfile.classList.remove("active");
+            if (profileView) profileView.classList.add("hidden");
+            
+            if (state.selectedPaper) {
+                welcomeView.classList.add("hidden");
+                analysisView.classList.remove("hidden");
+            } else {
+                welcomeView.classList.remove("hidden");
+                analysisView.classList.add("hidden");
+            }
+        } else if (viewName === "profile") {
+            if (navDashboard) navDashboard.classList.remove("active");
+            if (navProfile) navProfile.classList.add("active");
+            if (profileView) profileView.classList.remove("hidden");
+            welcomeView.classList.add("hidden");
+            analysisView.classList.add("hidden");
+            
+            updateProfileMetrics();
+            checkAPIConnectivity();
+        }
+    }
+
+    if (navDashboard) navDashboard.addEventListener("click", () => switchView("dashboard"));
+    if (navProfile) navProfile.addEventListener("click", () => switchView("profile"));
+
+    function updateProfileMetrics() {
+        if (statProjectsCount) {
+            statProjectsCount.textContent = state.projects.length;
+        }
+        if (statPapersCount) {
+            statPapersCount.textContent = state.papers.length;
+        }
+    }
+
+    async function checkAPIConnectivity() {
+        try {
+            const res = await fetch("/api/api-status");
+            if (res.ok) {
+                const status = await res.json();
+                
+                if (indicatorGemini) {
+                    if (status.gemini) {
+                        indicatorGemini.textContent = "Connected";
+                        indicatorGemini.classList.add("active");
+                    } else {
+                        indicatorGemini.textContent = "Not Configured";
+                        indicatorGemini.classList.remove("active");
+                    }
+                }
+
+                if (indicatorGroq) {
+                    if (status.groq) {
+                        indicatorGroq.textContent = "Connected";
+                        indicatorGroq.classList.add("active");
+                    } else {
+                        indicatorGroq.textContent = "Not Configured";
+                        indicatorGroq.classList.remove("active");
+                    }
+                }
+
+                if (indicatorOpenrouter) {
+                    if (status.openrouter) {
+                        indicatorOpenrouter.textContent = "Connected";
+                        indicatorOpenrouter.classList.add("active");
+                    } else {
+                        indicatorOpenrouter.textContent = "Not Configured";
+                        indicatorOpenrouter.classList.remove("active");
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Failed to check API connectivity:", err);
+        }
+    }
+
+    // Run API connectivity check on page load as well
+    checkAPIConnectivity();
 
     // Project Selection and Management Handlers
     async function fetchProjectsList() {
@@ -119,8 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 state.selectedProjectId = newProj.id;
                 localStorage.setItem("selectedProjectId", state.selectedProjectId);
                 
-                welcomeView.classList.remove("hidden");
-                analysisView.classList.add("hidden");
+                switchView("dashboard");
                 state.selectedPaper = null;
                 
                 await fetchProjectsList();
@@ -133,49 +257,47 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Error creating project", e);
             alert("Connection error while creating project.");
         }
-    });
-
-    deleteProjectBtn.addEventListener("click", async () => {
-        const activeProj = state.projects.find(p => p.id === state.selectedProjectId);
-        const name = activeProj ? activeProj.name : state.selectedProjectId;
-        if (!confirm(`Are you sure you want to delete project "${name}"?\nThis will permanently remove all its uploaded papers and reviews.`)) {
-            return;
-        }
-        
-        try {
-            const res = await fetch(`/api/project/${state.selectedProjectId}`, {
-                method: "DELETE"
-            });
-            if (res.ok) {
-                state.selectedProjectId = "";
-                localStorage.setItem("selectedProjectId", "");
-                
-                welcomeView.classList.remove("hidden");
-                analysisView.classList.add("hidden");
-                state.selectedPaper = null;
-                
-                await fetchProjectsList();
-                await fetchPapersList();
-            } else {
-                const err = await res.json();
-                alert(err.detail || "Failed to delete project.");
-            }
-        } catch (e) {
-            console.error("Error deleting project", e);
-            alert("Connection error while deleting project.");
-        }
-    });
-
-    projectSelect.addEventListener("change", (e) => {
-        state.selectedProjectId = e.target.value;
-        localStorage.setItem("selectedProjectId", state.selectedProjectId);
-        
-        welcomeView.classList.remove("hidden");
-        analysisView.classList.add("hidden");
-        state.selectedPaper = null;
-        
-        fetchPapersList();
-    });
+     });
+ 
+     deleteProjectBtn.addEventListener("click", async () => {
+         const activeProj = state.projects.find(p => p.id === state.selectedProjectId);
+         const name = activeProj ? activeProj.name : state.selectedProjectId;
+         if (!confirm(`Are you sure you want to delete project "${name}"?\nThis will permanently remove all its uploaded papers and reviews.`)) {
+             return;
+         }
+         
+         try {
+             const res = await fetch(`/api/project/${state.selectedProjectId}`, {
+                 method: "DELETE"
+             });
+             if (res.ok) {
+                 state.selectedProjectId = "";
+                 localStorage.setItem("selectedProjectId", "");
+                 
+                 switchView("dashboard");
+                 state.selectedPaper = null;
+                 
+                 await fetchProjectsList();
+                 await fetchPapersList();
+             } else {
+                 const err = await res.json();
+                 alert(err.detail || "Failed to delete project.");
+             }
+         } catch (e) {
+             console.error("Error deleting project", e);
+             alert("Connection error while deleting project.");
+         }
+     });
+ 
+     projectSelect.addEventListener("change", (e) => {
+         state.selectedProjectId = e.target.value;
+         localStorage.setItem("selectedProjectId", state.selectedProjectId);
+         
+         switchView("dashboard");
+         state.selectedPaper = null;
+         
+         fetchPapersList();
+     });
 
     if (modelSelect) {
         modelSelect.value = state.selectedModelId;
@@ -323,8 +445,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 renderPapersList();
                 
                 // Toggle view states
-                welcomeView.classList.add("hidden");
-                analysisView.classList.remove("hidden");
+                switchView("dashboard");
                 
                 // Render paper contents
                 renderPaperHeader();

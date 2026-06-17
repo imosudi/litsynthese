@@ -38,6 +38,26 @@
                 <h1>LitSynthese</h1>
             </div>
 
+            <!-- Navigation Menu -->
+            <nav class="sidebar-nav">
+                <button id="nav-dashboard" class="nav-item active">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="9"></rect>
+                        <rect x="14" y="3" width="7" height="5"></rect>
+                        <rect x="14" y="12" width="7" height="9"></rect>
+                        <rect x="3" y="16" width="7" height="5"></rect>
+                    </svg>
+                    <span>Dashboard</span>
+                </button>
+                <button id="nav-profile" class="nav-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Profile & Themes</span>
+                </button>
+            </nav>
+
             <!-- Project Selector -->
             <div class="project-selector-section">
                 <label for="project-select">Active Project</label>
@@ -303,6 +323,201 @@
                                 <p class="text-secondary small mb-4">Key scientific concepts extracted from this document based on semantic relevance.</p>
                                 <div class="keywords-cloud flex-grow-1 overflow-y-auto" id="keywords-cloud">
                                     <!-- Rendered dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Profile & Theme Customisation Workspace -->
+            <div class="profile-container hidden" id="profile-view">
+                <header class="profile-header mb-4">
+                    <h2>Researcher Profile & Theme Customisation</h2>
+                    <p class="text-secondary mb-0">Customise your digital lab environment and manage your API connections.</p>
+                </header>
+
+                <div class="profile-grid">
+                    <div class="row g-4">
+                        <!-- Profile Card -->
+                        <div class="col-lg-5 col-12">
+                            <div class="profile-card card p-4 h-100">
+                                <div class="profile-avatar-section text-center mb-4">
+                                    <div class="profile-avatar-wrapper mx-auto mb-3">
+                                        <div class="avatar-gradient">M</div>
+                                    </div>
+                                    <h3 class="h4 fw-bold mb-1">Mosudi Isiaka O.</h3>
+                                    <p class="text-accent small mb-0 fw-semibold">Lead Academic Researcher</p>
+                                    <p class="text-secondary small">info@mioemi.com</p>
+                                </div>
+                                <div class="profile-stats-grid">
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <div class="stat-box p-3 rounded text-center">
+                                                <span class="stat-num" id="stat-projects-count">--</span>
+                                                <span class="stat-label">Active Projects</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="stat-box p-3 rounded text-center">
+                                                <span class="stat-num" id="stat-papers-count">--</span>
+                                                <span class="stat-label">Analyzed Papers</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="profile-info-details mt-4 pt-3 border-top">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-secondary small">Institution:</span>
+                                        <span class="small fw-semibold">MIOEMI Academy</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-secondary small">Research Domain:</span>
+                                        <span class="small fw-semibold">AI & Machine Learning</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary small">System Status:</span>
+                                        <span class="small badge bg-success-glow">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Theme Grid & Settings -->
+                        <div class="col-lg-7 col-12">
+                            <div class="theme-selection-card card p-4 h-100">
+                                <h3 class="h5 fw-bold mb-3">Tech Company Themes</h3>
+                                <p class="text-secondary small mb-4">Select a corporate design language to instantly adapt your workspaces to match the aesthetic of leading technology companies.</p>
+                                
+                                <div class="row g-3">
+                                    <!-- Google Theme -->
+                                    <div class="col-md-6 col-12">
+                                        <div class="theme-card-option p-3 rounded" data-theme-value="google">
+                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
+                                                <span class="theme-card-title fw-bold">Google Gemini</span>
+                                                <div class="theme-dots google">
+                                                    <span class="dot blue"></span>
+                                                    <span class="dot red"></span>
+                                                    <span class="dot yellow"></span>
+                                                    <span class="dot green"></span>
+                                                </div>
+                                            </div>
+                                            <p class="theme-card-desc mb-0">Clean slate canvas, rounded card styling, and multi-colored google accent indicators.</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Samsung Theme -->
+                                    <div class="col-md-6 col-12">
+                                        <div class="theme-card-option p-3 rounded" data-theme-value="samsung">
+                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
+                                                <span class="theme-card-title fw-bold">Samsung Galaxy</span>
+                                                <div class="theme-dots samsung">
+                                                    <span class="dot violet"></span>
+                                                    <span class="dot pink"></span>
+                                                    <span class="dot cyan"></span>
+                                                </div>
+                                            </div>
+                                            <p class="theme-card-desc mb-0">OLED pure dark mode featuring sleek magenta accents and deep violet container backdrops.</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Microsoft Theme -->
+                                    <div class="col-md-6 col-12">
+                                        <div class="theme-card-option p-3 rounded" data-theme-value="microsoft">
+                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
+                                                <span class="theme-card-title fw-bold">Microsoft Fluent</span>
+                                                <div class="theme-dots microsoft">
+                                                    <span class="dot blue"></span>
+                                                    <span class="dot teal"></span>
+                                                    <span class="dot green"></span>
+                                                </div>
+                                            </div>
+                                            <p class="theme-card-desc mb-0">High-blur frosted glass, crisp geometric grid lines, and teal accent elements.</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hyundai Theme -->
+                                    <div class="col-md-6 col-12">
+                                        <div class="theme-card-option p-3 rounded" data-theme-value="hyundai">
+                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
+                                                <span class="theme-card-title fw-bold">Hyundai Modern</span>
+                                                <div class="theme-dots hyundai">
+                                                    <span class="dot navy"></span>
+                                                    <span class="dot silver"></span>
+                                                    <span class="dot cyan"></span>
+                                                </div>
+                                            </div>
+                                            <p class="theme-card-desc mb-0">Ultra-sleek corporate blue and slate, modern minimal borders, and bright cyan active highlights.</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Default Purple -->
+                                    <div class="col-md-6 col-12">
+                                        <div class="theme-card-option p-3 rounded" data-theme-value="dark">
+                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
+                                                <span class="theme-card-title fw-bold">LitSynthese Dark</span>
+                                                <div class="theme-dots default-dark">
+                                                    <span class="dot indigo"></span>
+                                                    <span class="dot purple"></span>
+                                                    <span class="dot magenta"></span>
+                                                </div>
+                                            </div>
+                                            <p class="theme-card-desc mb-0">Original glassmorphic dark theme with vibrant purple gradients and indigo panels.</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Default Light -->
+                                    <div class="col-md-6 col-12">
+                                        <div class="theme-card-option p-3 rounded" data-theme-value="light">
+                                            <div class="theme-card-header d-flex align-items-center justify-content-between mb-3">
+                                                <span class="theme-card-title fw-bold">LitSynthese Light</span>
+                                                <div class="theme-dots default-light">
+                                                    <span class="dot indigo"></span>
+                                                    <span class="dot purple"></span>
+                                                    <span class="dot white"></span>
+                                                </div>
+                                            </div>
+                                            <p class="theme-card-desc mb-0">Clean, crisp light layout optimized for bright environments and paper-like text styling.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Status Dashboard -->
+                    <div class="row g-4 mt-1">
+                        <div class="col-12">
+                            <div class="card p-4">
+                                <h3 class="h5 fw-bold mb-3">API Connectivity & Engine Status</h3>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="api-status-box p-3 rounded d-flex align-items-center justify-content-between" id="status-box-gemini">
+                                            <div>
+                                                <h4 class="h6 mb-1">Gemini AI Engine</h4>
+                                                <p class="text-secondary small mb-0">Google Cloud Platform</p>
+                                            </div>
+                                            <span class="status-indicator-badge" id="indicator-gemini">Checking...</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="api-status-box p-3 rounded d-flex align-items-center justify-content-between" id="status-box-groq">
+                                            <div>
+                                                <h4 class="h6 mb-1">Groq Engine</h4>
+                                                <p class="text-secondary small mb-0">Llama/Mixtral Models</p>
+                                            </div>
+                                            <span class="status-indicator-badge" id="indicator-groq">Checking...</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="api-status-box p-3 rounded d-flex align-items-center justify-content-between" id="status-box-openrouter">
+                                            <div>
+                                                <h4 class="h6 mb-1">OpenRouter Engine</h4>
+                                                <p class="text-secondary small mb-0">LLM Aggregator Hub</p>
+                                            </div>
+                                            <span class="status-indicator-badge" id="indicator-openrouter">Checking...</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

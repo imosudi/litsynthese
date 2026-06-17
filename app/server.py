@@ -163,6 +163,15 @@ def get_project_dirs(project_id: str) -> tuple[str, str]:
     
     return uploads_dir, processed_dir
 
+@app.get("/api/api-status")
+async def get_api_status():
+    """Returns the configuration status of all backend API keys."""
+    return {
+        "gemini": bool(os.getenv("GEMINI_API_KEY")),
+        "groq": bool(os.getenv("GROQ_API_KEY")),
+        "openrouter": bool(os.getenv("OPENROUTER_API_KEY"))
+    }
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
     """Serve index.html directly from templates/ folder."""
