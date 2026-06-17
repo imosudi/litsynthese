@@ -748,10 +748,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 1. Ingestion / Upload Event Listeners
-    dropZone.addEventListener("click", () => fileInput.click());
+    dropZone.addEventListener("click", () => {
+        if (!state.selectedProjectId) {
+            alert("Please create or select a review project first.");
+            return;
+        }
+        fileInput.click();
+    });
 
     fileInput.addEventListener("change", (e) => {
         if (e.target.files.length > 0) {
+            if (!state.selectedProjectId) {
+                alert("Please create or select a review project first.");
+                fileInput.value = "";
+                return;
+            }
             handleFileUpload(e.target.files[0]);
         }
     });
@@ -770,6 +781,10 @@ document.addEventListener("DOMContentLoaded", () => {
     dropZone.addEventListener("drop", (e) => {
         e.preventDefault();
         dropZone.classList.remove("dragover");
+        if (!state.selectedProjectId) {
+            alert("Please create or select a review project first.");
+            return;
+        }
         if (e.dataTransfer.files.length > 0) {
             handleFileUpload(e.dataTransfer.files[0]);
         }

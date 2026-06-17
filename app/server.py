@@ -119,14 +119,6 @@ def register_user(auth_req: UserRegister, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     
-    # Initialize a default starting project
-    project_id = str(uuid.uuid4())
-    uploads_dir, processed_dir = get_project_dirs(project_id)
-    
-    proj = Project(id=project_id, name="Machine Learning Reviews", owner=new_user)
-    db.add(proj)
-    db.commit()
-    
     token = create_access_token({"sub": new_user.email})
     return {"access_token": token, "token_type": "bearer", "email": new_user.email}
 
@@ -265,17 +257,6 @@ async def list_projects(current_user: User = Depends(get_current_user), db: Sess
     """Lists all available review projects for the authorized user."""
     user_projects = db.query(Project).filter(Project.user_id == current_user.id).all()
     
-    # If no projects exist, initialize a default one on the fly for them
-    if not user_projects:
-        project_id = str(uuid.uuid4())
-        get_project_dirs(project_id)
-        
-        proj = Project(id=project_id, name="Machine Learning Reviews", owner=current_user)
-        db.add(proj)
-        db.commit()
-        db.refresh(proj)
-        user_projects = [proj]
-        
     # Sort projects by creation time
     user_projects.sort(key=lambda x: x.created_at)
     return [{"id": p.id, "name": p.name, "created_at": p.created_at.timestamp()} for p in user_projects]
