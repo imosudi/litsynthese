@@ -101,3 +101,29 @@ Open your browser and navigate to:
 
 To categorise the repository on GitHub, the following topics are recommended:
 `academic-research`, `pdf-parser`, `rag`, `literature-review`, `gemini-api`, `llama3`, `qwen`, `gemma`, `fastapi`, `citation-linker`, `academic-papers`, `llm`, `groq`, `openrouter`
+
+---
+
+## 🪪 Licence
+
+BSD 2-Clause License
+
+Copyright © 2025 Isiaka Olukayode Mosudi
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND.
+
+## 👤 Author
+
+**Isiaka Olukayode Mosudi**  
+MEng (Communications Engineering) | MSc (IoT & Smart Systems) | BEng (Electrical and Computer Engineering)  
+Vienna, Austria
+
+* **Email:** [imosudi@outlook.com](mailto:imosudi@outlook.com)
+* **Website:** [mioemi.com](https://mioemi.com)
+* **GitHub:** [github.com/imosudi](https://github.com/imosudi)
+

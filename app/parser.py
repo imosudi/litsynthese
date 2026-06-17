@@ -94,7 +94,7 @@ class AcademicPaperParser:
             "experiments": re.compile(r'^\s*(?:\d+\.?\s*)?(?:experiments|evaluation|experimental\s+setup|methodology\s+evaluation)\b', re.IGNORECASE),
             "results": re.compile(r'^\s*(?:\d+\.?\s*)?(?:results|discussion|findings|analysis)\b', re.IGNORECASE),
             "conclusion": re.compile(r'^\s*(?:\d+\.?\s*)?(?:conclusion|conclusions|concluding\s+remarks)\b', re.IGNORECASE),
-            "references": re.compile(r'^\s*(?:\d+\.?\s*)?(?:references|bibliography|works\s+cited)\b', re.IGNORECASE)
+            "references": re.compile(r'^\s*(?:\d+\.?\s*)?(?:references|bibliography|works\s+cited|bibliographical\s+references)\b', re.IGNORECASE)
         }
         
         # Initialise sections dict
@@ -146,6 +146,10 @@ class AcademicPaperParser:
         if not ref_text:
             return
             
+        # Remove section heading if it is at the start of the text
+        ref_heading_pattern = re.compile(r'^\s*(?:\d+\.?\s*)?(?:references|bibliography|works\s+cited|bibliographical\s+references)\b\s*', re.IGNORECASE)
+        ref_text = ref_heading_pattern.sub('', ref_text)
+            
         # Try to split on bracketed numbers like [1], [2]
         # Common bibliography numbering format: [1] Author, Title...
         bracket_pattern = re.compile(r'\[(\d+)\]\s*(.*?)(?=\[\d+\]|\Z)', re.DOTALL)
@@ -160,9 +164,15 @@ class AcademicPaperParser:
                 })
         else:
             # Fallback 1: Numbered list like "1. Author, Title"
-            numbered_pattern = re.compile(r'(?:^|\s)(\d+)\.\s+(.*?)(?=\s\d+\.\s|\Z)', re.DOTALL)
+            numbered_pattern = re.compile(r'(?:^|\s)(\d{1,3})\.\s+(.*?)(?=\s\d{1,3}\.\s|\Z)', re.DOTALL)
             matches = numbered_pattern.findall(ref_text)
+            is_valid_numbered = False
             if matches:
+                indices = [int(idx) for idx, _ in matches]
+                if len(indices) > 1 and (1 in indices or 2 in indices):
+                    is_valid_numbered = True
+                    
+            if is_valid_numbered:
                 for idx, text in matches:
                     self.references.append({
                         "index": int(idx),
@@ -170,17 +180,71 @@ class AcademicPaperParser:
                         "citations": []
                     })
             else:
-                # Fallback 2: APA style split by paragraphs (split by line if double newline or long gaps)
-                # Let's split by double newline or block patterns.
-                # For APA style, references are alphabetical and have hanging indents.
-                # Since we don't have visual indent info easily, we can split by line or standard heuristic.
-                lines = [line.strip() for line in ref_text.split(".") if line.strip()]
-                for idx, line in enumerate(lines[:50]): # Cap at 50 to prevent noise
-                    self.references.append({
-                        "index": idx + 1,
-                        "raw_text": line.strip(),
-                        "citations": []
-                    })
+                # Fallback 2: APA / Harvard style unnumbered author-year bibliography list
+                # 1. Find all 4-digit years in the references text
+                year_matches = list(re.finditer(r'\b(19\d{2}|20\d{2})[a-z]?\b', ref_text))
+                
+                boundaries = [0]
+                
+                # Common words that appear in titles/venues/drafts but NOT in author lists
+                forbidden_words = {
+                    'in', 'on', 'for', 'at', 'by', 'from', 'the', 'version', 
+                    'draft', 'proceedings', 'conference', 'journal', 'workshop', 'volume', 
+                    'pages', 'page', 'editor', 'editors', 'edition', 'university', 'press', 
+                    'science', 'technology', 'department', 'institute', 'society', 'association'
+                }
+                
+                for i in range(1, len(year_matches)):
+                    year_start = year_matches[i].start()
+                    prev_year_end = year_matches[i-1].end()
+                    
+                    # Search text between the end of the previous year and the start of the current year
+                    search_text = ref_text[prev_year_end:year_start]
+                    
+                    # Find all periods in search_text
+                    period_indices = [m.start() for m in re.finditer(r'\.', search_text)]
+                    
+                    boundary_idx = None
+                    # Go backwards through the periods (from closest to the year)
+                    for p_idx in reversed(period_indices):
+                        # Skip if it is just the separator period between authors and the year
+                        # (i.e. no words between this period and the end of search_text)
+                        text_after_period = search_text[p_idx + 1:]
+                        if not re.search(r'\w', text_after_period):
+                            continue
+                            
+                        # Skip if it is part of an initial (e.g. ' D.')
+                        part_before = search_text[:p_idx]
+                        if re.search(r'\b[A-Z]$', part_before.strip()):
+                            continue
+                            
+                        # Skip if it is part of 'et al.'
+                        if part_before.strip().endswith('et al'):
+                            continue
+                            
+                        # Skip if the candidate author list (text after the period) contains forbidden words
+                        candidate_authors = text_after_period.lower()
+                        words = set(re.findall(r'\b\w+\b', candidate_authors))
+                        if words.intersection(forbidden_words):
+                            continue
+                            
+                        boundary_idx = prev_year_end + p_idx + 1
+                        break
+                        
+                    if boundary_idx is not None:
+                        boundaries.append(boundary_idx)
+                        
+                boundaries.append(len(ref_text))
+                
+                # Split entries and build the references list
+                for idx in range(len(boundaries) - 1):
+                    entry_text = ref_text[boundaries[idx]:boundaries[idx+1]].strip()
+                    if entry_text:
+                        self.references.append({
+                            "index": idx + 1,
+                            "raw_text": entry_text,
+                            "citations": []
+                        })
 
     def _map_citations(self):
         """Finds where each bibliography item is cited in the text and extracts surrounding context."""
