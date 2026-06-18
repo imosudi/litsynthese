@@ -676,22 +676,59 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function updateDropZoneState() {
+        if (!dropZone) return;
+        const dropText = dropZone.querySelector(".drop-text");
+        const browseBtn = dropZone.querySelector(".browse-btn");
+        if (!state.selectedProjectId) {
+            dropZone.style.opacity = "0.5";
+            if (dropText) dropText.textContent = "Create project first";
+            if (browseBtn) browseBtn.style.pointerEvents = "none";
+        } else {
+            dropZone.style.opacity = "1";
+            if (dropText) dropText.textContent = "Drag & drop paper PDF(s)";
+            if (browseBtn) browseBtn.style.pointerEvents = "auto";
+        }
+    }
+
     function renderProjectsDropdown() {
         if (!projectSelect) return;
         projectSelect.innerHTML = "";
-        state.projects.forEach(proj => {
+        
+        if (state.projects.length === 0) {
             const opt = document.createElement("option");
-            opt.value = proj.id;
-            opt.textContent = proj.name;
-            opt.selected = proj.id === state.selectedProjectId;
+            opt.value = "";
+            opt.textContent = "-- Create a Project --";
+            opt.disabled = true;
+            opt.selected = true;
             projectSelect.appendChild(opt);
-        });
+        } else {
+            state.projects.forEach(proj => {
+                const opt = document.createElement("option");
+                opt.value = proj.id;
+                opt.textContent = proj.name;
+                opt.selected = proj.id === state.selectedProjectId;
+                projectSelect.appendChild(opt);
+            });
+        }
         
         if (state.projects.length > 0) {
             deleteProjectBtn.style.display = "flex";
         } else {
             deleteProjectBtn.style.display = "none";
         }
+
+        // Toggle Guidance Alert
+        const noProjectGuidance = document.getElementById("no-project-guidance");
+        if (noProjectGuidance) {
+            if (!state.selectedProjectId) {
+                noProjectGuidance.classList.remove("d-none");
+            } else {
+                noProjectGuidance.classList.add("d-none");
+            }
+        }
+        
+        updateDropZoneState();
     }
 
     newProjectBtn.addEventListener("click", async () => {
@@ -759,6 +796,16 @@ document.addEventListener("DOMContentLoaded", () => {
      projectSelect.addEventListener("change", (e) => {
          state.selectedProjectId = e.target.value;
          localStorage.setItem("selectedProjectId", state.selectedProjectId);
+         
+         const noProjectGuidance = document.getElementById("no-project-guidance");
+         if (noProjectGuidance) {
+             if (!state.selectedProjectId) {
+                 noProjectGuidance.classList.remove("d-none");
+             } else {
+                 noProjectGuidance.classList.add("d-none");
+             }
+         }
+         updateDropZoneState();
          
          switchView("dashboard");
          state.selectedPaper = null;
@@ -878,7 +925,12 @@ document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => {
                 progressContainer.classList.add("hidden");
             }, 2000);
-            alert(`Upload completed with some errors:\n\n${errors.join("\n")}`);
+            
+            let extraGuidance = "";
+            if (errors.some(errStr => errStr.includes("Project not found") || errStr.includes("unauthorized"))) {
+                extraGuidance = "\n\nTroubleshooting Tip: It looks like you do not have an active project selected or authorization expired. Please ensure a project is selected in the 'Active Project' dropdown in the left sidebar.";
+            }
+            alert(`Upload completed with some errors:\n\n${errors.join("\n")}${extraGuidance}`);
         } else {
             progressStatus.textContent = "All papers parsed successfully!";
             progressBar.style.width = "100%";
