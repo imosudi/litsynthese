@@ -63,11 +63,12 @@ class AcademicPaperParser:
             authors = info.author or ""
             
         # Fallback to first page heuristics if title/authors are empty
-        if not title and len(self.pages_text) > 0:
-            first_page = self.pages_text[0]["clean_text"]
-            # Split by lines
-            lines = [line.strip() for line in first_page.split("\n") if line.strip()]
-            if lines:
+        first_page_text = ""
+        lines = []
+        if len(self.pages_text) > 0:
+            first_page_text = self.pages_text[0]["clean_text"]
+            lines = [line.strip() for line in first_page_text.split("\n") if line.strip()]
+            if not title and lines:
                 title = lines[0] # Assume first non-empty line on first page is title
                 if len(lines) > 1:
                     authors = lines[1] # Assume second line contains authors
@@ -82,6 +83,33 @@ class AcademicPaperParser:
         year_val = creation_date[:4] if creation_date else "Unknown Year"
         if not year_val.isdigit():
             year_val = "Unknown Year"
+
+        # Attempt to lookup accurate metadata using the academic citation engine
+        try:
+            from app.citation_engine import AcademicCitationEngine
+            citation_eng = AcademicCitationEngine()
+            
+            # If the first page is too short or doesn't have much text, check second page too for DOI
+            doi_search_text = first_page_text
+            if len(doi_search_text) < 500 and len(self.pages_text) > 1:
+                doi_search_text += "\n" + self.pages_text[1]["clean_text"]
+                
+            doi = citation_eng.extract_doi(doi_search_text)
+            resolved = None
+            if doi:
+                resolved = citation_eng.lookup_by_doi(doi)
+                
+            if not resolved:
+                query_title = title or (lines[0] if lines else "")
+                resolved = citation_eng.search_by_metadata(query_title, doi_search_text)
+                
+            if resolved:
+                title = resolved.get("title") or title
+                authors = resolved.get("authors") or authors
+                year_val = resolved.get("year") or year_val
+        except Exception as e:
+            # Silently fallback to PDF metadata/heuristics on lookup error (e.g. offline)
+            pass
             
         self.metadata = {
             "title": title or "Unknown Title",

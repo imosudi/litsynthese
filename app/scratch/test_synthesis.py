@@ -21,6 +21,12 @@ class TestSynthesisAndMatrix(unittest.TestCase):
         cls.client = TestClient(app)
 
     def setUp(self):
+        from unittest.mock import patch
+        self.doi_patcher = patch("app.citation_engine.AcademicCitationEngine.lookup_by_doi", return_value=None)
+        self.metadata_patcher = patch("app.citation_engine.AcademicCitationEngine.search_by_metadata", return_value=None)
+        self.doi_patcher.start()
+        self.metadata_patcher.start()
+
         self.db: Session = SessionLocal()
         # Clean existing test objects
         self.db.query(AcademicPaper).delete()
@@ -45,6 +51,9 @@ class TestSynthesisAndMatrix(unittest.TestCase):
         self.db.refresh(self.project)
 
     def tearDown(self):
+        self.doi_patcher.stop()
+        self.metadata_patcher.stop()
+
         self.db.query(AcademicPaper).delete()
         self.db.query(Project).delete()
         self.db.query(User).filter(User.email.like("test_%")).delete()
