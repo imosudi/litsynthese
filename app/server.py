@@ -23,7 +23,7 @@ from app.auth import get_current_user, create_access_token
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("litsynthese.server")
 
-# Initialize database tables
+# Initialise database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="LitSynthese API", version="1.0.0")
@@ -97,7 +97,7 @@ def get_user_project(project_id: str, user_id: int, db: Session) -> Project:
 # Authentication Endpoints
 @app.post("/api/auth/register")
 def register_user(auth_req: UserRegister, db: Session = Depends(get_db)):
-    """Registers a new user and automatically initializes their first default project."""
+    """Registers a new user and automatically initialises their first default project."""
     email = auth_req.email.strip().lower()
     password = auth_req.password
     security_q = auth_req.security_question.strip()

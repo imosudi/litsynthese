@@ -21,13 +21,13 @@ An automated academic paper ingestion, critique, and summarisation tool designed
 * **Bibliography Extraction:** Dynamically parses the `References` section, extracting individual publication entries (supporting both IEEE bracketed lists and APA-style alphabetized indexes).
 * **In-Text Citation Mapping:** Maps every reference to its exact occurrences in the body text. Compiled citation instances display context sentences, page numbers, and parent sections to trace where and why work was cited.
 
-### 2. PhD-Level LLM Critique & Multi-Model Synthesis
+### 2. Expert-Level LLM Critique & Multi-Model Synthesis
 * **Multi-Model Support:** Native integration with Google's official Gemini SDK and API integration with Groq and OpenRouter. It dynamically routes requests to standard and custom large language models:
   * **Gemini 2.5 Flash** (via the native `google-genai` SDK)
   * **LLaMA 3.1 (8B & 70B)** (via Groq API or OpenRouter API)
   * **Qwen 2.5 (72B)** (via OpenRouter API)
   * **Gemma 4 (31B)** (via OpenRouter API)
-* **Structured Synthesis:** Generates a 6-aspect academic evaluation utilizing the selected LLM:
+* **Structured Synthesis:** Generates a 6-aspect academic evaluation utilising the selected LLM:
   * **Executive Synopsis:** High-level problem statement, target application, and final outcomes.
   * **Key Contributions:** List of novel designs, proofs, algorithms, or experimental discoveries.
   * **Methodology & Framework:** Synthesis of datasets, training regimes, mathematical models, or hardware setups.

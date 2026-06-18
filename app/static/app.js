@@ -550,7 +550,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Initialize with false so we don't flash on page load
+    // Initialise with false so we don't flash on page load
     setApplicationTheme(state.currentTheme, false);
 
     // Custom Synthesis Settings persistence

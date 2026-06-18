@@ -412,8 +412,8 @@ Do not hallucinate facts. Cite specific section names (e.g., "[Methodology]", "[
 Based on the synthesised review of the project's literature, here is an analysis addressing your query: "{query}".
 
 1. **Methodological Comparison:**
-   - The compiled papers show a progression from classical statistical baselines to deep neural networks. In particular, Smith et al. (2025) utilizes a baseline transformer architecture, whereas Doe et al. (2026) extends this with a sparse attention mechanism to reduce computational overhead.
-   - Evaluation metrics are consistently focused on F1 score and latency, although sample sizes remain a threat to generalizability (Johnson et al., 2024).
+   - The compiled papers show a progression from classical statistical baselines to deep neural networks. In particular, Smith et al. (2025) utilises a baseline transformer architecture, whereas Doe et al. (2026) extends this with a sparse attention mechanism to reduce computational overhead.
+   - Evaluation metrics are consistently focused on F1 score and latency, although sample sizes remain a threat to generalisability (Johnson et al., 2024).
 
 2. **Core Insights & Limitations:**
    - Consensus exists regarding the efficacy of pre-training; however, computational constraints are widely cited as a barrier to deployment.
@@ -643,7 +643,7 @@ Do not make up facts. Answer objectively and draw comparisons based ONLY on the 
                 "synopsis": f"This academic paper titled '{title}' explores domain-specific structures and methodologies to improve performance and consistency. It reviews previous academic baselines, highlights architectural flaws, and proposes a systematic framework for solution development.",
                 "contributions": [
                     "Identifies critical theoretical limitations in current baseline models.",
-                    "Introduces a generalized framework that unifies disparate methodologies in the literature.",
+                    "Introduces a generalised framework that unifies disparate methodologies in the literature.",
                     "Validates the framework across three distinct empirical testbeds."
                 ],
                 "methodology": "A multi-phase qualitative and quantitative evaluation methodology. The theoretical framework is modeled using mathematical abstractions, and verified against numerical simulation results. Standard statistical tests (t-tests, ANOVA) are applied to establish statistical significance.",
