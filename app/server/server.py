@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 import config
 from app.parser import AcademicPaperParser
 from app.llm import AcademicLLMService
+from app.chat_engine import AcademicChatEngine
 from app.database import Base, engine, get_db
 from app.models import User, Project, AcademicPaper, ChatMessage, UserProfile
 from app.auth import get_current_user, create_access_token
@@ -37,6 +38,9 @@ os.makedirs(PROJECTS_BASE_DIR, exist_ok=True)
 
 # Initialise LLM Service
 llm_service = AcademicLLMService()
+
+# Initialise Chat Engine
+chat_engine = AcademicChatEngine()
 
 # Pydantic Schemas
 class ChatMessageSchema(BaseModel):
@@ -700,7 +704,7 @@ async def chat_paper(
     db_history = db.query(ChatMessage).filter(ChatMessage.paper_id == paper.id).order_by(ChatMessage.created_at.asc()).all()
     history_dicts = [{"role": msg.role, "content": msg.content} for msg in db_history]
     
-    reply = llm_service.chat_about_paper(
+    reply = chat_engine.chat_about_paper(
         title=data["metadata"]["title"],
         sections=data["sections"],
         chat_history=history_dicts,

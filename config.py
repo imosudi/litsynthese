@@ -25,3 +25,21 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 PROJECTS_BASE_DIR = os.path.join(BASE_DIR, "data", "projects")
 
+# Model fallback configurations for downstream LLM services
+GEMINI_MODELS_FALLBACK = [
+    "gemini-3.5-pro",
+    "gemini-3.5-flash",
+    "gemini-3.1-pro",
+    "gemini-3.1-flash",
+    "gemini-2.5-pro",
+    "gemini-2.5-flash"
+]
+
+LLAMA_MODELS_FALLBACK = [
+    "groq/llama-3.1-70b-versatile",
+    "groq/llama-3.1-8b-instant",
+    "openrouter/meta-llama/llama-3.1-70b-instruct",
+    "openrouter/meta-llama/llama-3.1-8b-instruct"
+]
+
+
