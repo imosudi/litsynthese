@@ -1,0 +1,124 @@
+<!-- User Profile & Theme Customisation Workspace -->
+<div class="profile-container hidden" id="profile-view">
+    <header class="profile-header mb-4">
+        <h2>Researcher Profile & Theme Customisation</h2>
+        <p class="text-secondary mb-0">Customise your digital lab environment and manage your API connections.</p>
+    </header>
+
+    <div class="profile-grid">
+        <div class="row g-4">
+            <!-- Profile Card -->
+            <div class="col-lg-5 col-12">
+                <div class="profile-card card p-4 h-100">
+                    <div class="profile-avatar-section text-center mb-4">
+                        <div class="profile-avatar-wrapper mx-auto mb-3">
+                            <div class="avatar-gradient" id="profile-avatar-initial">R</div>
+                        </div>
+                        <h3 class="h4 fw-bold mb-1" id="profile-email-display">researcher@university.edu</h3>
+                        <p class="text-accent small mb-0 fw-semibold">Academic Researcher</p>
+                    </div>
+                    <div class="profile-stats-grid">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="stat-box p-3 rounded text-center">
+                                    <span class="stat-num" id="stat-projects-count">--</span>
+                                    <span class="stat-label">Active Projects</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-box p-3 rounded text-center">
+                                    <span class="stat-num" id="stat-papers-count">--</span>
+                                    <span class="stat-label">Analyzed Papers</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="profile-info-details mt-4 pt-3 border-top" id="profile-info-view">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-secondary small">Institution:</span>
+                            <span class="small fw-semibold" id="profile-institution-val">N/A</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-secondary small">Research Domain:</span>
+                            <span class="small fw-semibold" id="profile-domain-val">N/A</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-secondary small">Research Topic:</span>
+                            <span class="small fw-semibold" id="profile-topic-val">N/A</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="text-secondary small">System Status:</span>
+                            <span class="small badge bg-success-glow">Active</span>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm w-100 mb-2" id="edit-profile-btn">Edit Profile Info</button>
+                    </div>
+
+                    <form class="profile-info-details mt-4 pt-3 border-top hidden" id="profile-info-form">
+                        <div class="mb-2">
+                            <label class="text-secondary small mb-1">Institution</label>
+                            <input type="text" class="form-control form-control-sm" id="edit-institution" value="">
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-secondary small mb-1">Research Domain</label>
+                            <input type="text" class="form-control form-control-sm" id="edit-domain" value="">
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-secondary small mb-1">Research Topic</label>
+                            <input type="text" class="form-control form-control-sm" id="edit-topic" value="">
+                        </div>
+                        <div class="d-flex gap-2 mb-2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100" id="save-profile-btn">Save</button>
+                            <button type="button" class="btn btn-secondary btn-sm w-100" id="cancel-profile-btn">Cancel</button>
+                        </div>
+                    </form>
+
+                    <div class="mt-2">
+                        <button class="btn btn-outline-danger btn-sm w-100" id="logout-btn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1 align-text-top">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                            </svg>
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Status Dashboard -->
+            <div class="col-lg-7 col-12">
+                <div class="card p-4 h-100">
+                    <h3 class="h5 fw-bold mb-3">API Connectivity & Engine Status</h3>
+                    <p class="text-secondary small mb-4">LitSynthese automatically checks real-time connectivity with your configured LLM API keys to verify parsing and analysis availability.</p>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="api-status-box p-3 rounded d-flex align-items-center justify-content-between" id="status-box-gemini">
+                                <div>
+                                    <h4 class="h6 mb-1">Gemini AI Engine</h4>
+                                    <p class="text-secondary small mb-0">Google Cloud Platform</p>
+                                </div>
+                                <span class="status-indicator-badge" id="indicator-gemini">Checking...</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="api-status-box p-3 rounded d-flex align-items-center justify-content-between" id="status-box-groq">
+                                <div>
+                                    <h4 class="h6 mb-1">Groq Engine</h4>
+                                    <p class="text-secondary small mb-0">Llama/Mixtral Models</p>
+                                </div>
+                                <span class="status-indicator-badge" id="indicator-groq">Checking...</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="api-status-box p-3 rounded d-flex align-items-center justify-content-between" id="status-box-openrouter">
+                                <div>
+                                    <h4 class="h6 mb-1">OpenRouter Engine</h4>
+                                    <p class="text-secondary small mb-0">LLM Aggregator Hub</p>
+                                </div>
+                                <span class="status-indicator-badge" id="indicator-openrouter">Checking...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

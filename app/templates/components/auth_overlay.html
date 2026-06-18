@@ -1,0 +1,96 @@
+<!-- Authentication Overlay Screen -->
+<div id="auth-overlay" class="auth-overlay">
+    <div class="auth-card">
+        <div class="auth-logo mb-3">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                <path d="M12 5v6M9 8h6" opacity="0.9"></path>
+            </svg>
+        </div>
+        <h2 class="auth-title">LitSynthese</h2>
+        <p class="auth-subtitle mb-4">PhD-Level Academic Literature Synthesis</p>
+        
+        <form id="auth-form" class="auth-form">
+            <div class="mb-3">
+                <label for="auth-email" class="form-label">Academic Email</label>
+                <input type="email" class="form-control" id="auth-email" placeholder="researcher@university.edu" required>
+            </div>
+            <div class="mb-3">
+                <label for="auth-password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="auth-password" placeholder="••••••••" required>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4" id="login-extra-row">
+                <div></div>
+                <button type="button" class="btn btn-link p-0 small text-decoration-none" id="forgot-password-link" style="font-size: 0.8rem; color: var(--accent-color);">Forgot Password?</button>
+            </div>
+
+            <!-- Registration Recovery Setup Fields -->
+            <div class="mb-4 hidden" id="register-recovery-fields">
+                <div class="mb-3">
+                    <label for="auth-question" class="form-label">Security Question</label>
+                    <select class="form-select form-control" id="auth-question" style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); color: var(--text-primary);">
+                        <option value="What was the name of your first research advisor?">What was the name of your first research advisor?</option>
+                        <option value="What is your favorite academic journal?">What is your favorite academic journal?</option>
+                        <option value="What was the topic of your first publication?">What was the topic of your first publication?</option>
+                        <option value="In what city did you attend your first conference?">In what city did you attend your first conference?</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="auth-answer" class="form-label">Security Answer</label>
+                    <input type="text" class="form-control" id="auth-answer" placeholder="e.g. Professor Smith">
+                </div>
+            </div>
+            
+            <div class="alert alert-danger hidden" id="auth-error-alert" role="alert">
+                Invalid credentials. Please try again.
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 py-2 mb-3" id="auth-submit-btn">Sign In</button>
+        </form>
+
+        <!-- Password Recovery View Form -->
+        <form id="forgot-password-form" class="auth-form hidden">
+            <h3 class="h5 fw-bold mb-3 text-center">Reset Password</h3>
+            
+            <!-- Step 1: Email -->
+            <div id="recovery-step-email">
+                <div class="mb-3">
+                    <label for="recovery-email" class="form-label">Academic Email</label>
+                    <input type="email" class="form-control" id="recovery-email" placeholder="researcher@university.edu" required>
+                </div>
+                <button type="button" class="btn btn-primary w-100 py-2 mb-3" id="recovery-next-email-btn">Next</button>
+            </div>
+            
+            <!-- Step 2: Answer Question -->
+            <div id="recovery-step-question" class="hidden">
+                <p class="text-secondary small mb-3 text-start" id="recovery-question-label">Loading security question...</p>
+                <div class="mb-3">
+                    <label for="recovery-answer" class="form-label">Your Answer</label>
+                    <input type="text" class="form-control" id="recovery-answer" placeholder="Your Answer" required>
+                </div>
+                <button type="button" class="btn btn-primary w-100 py-2 mb-3" id="recovery-next-answer-btn">Verify Answer</button>
+            </div>
+            
+            <!-- Step 3: New Password -->
+            <div id="recovery-step-password" class="hidden">
+                <div class="mb-3">
+                    <label for="recovery-new-password" class="form-label">New Password</label>
+                    <input type="password" class="form-control" id="recovery-new-password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2 mb-3" id="recovery-submit-btn">Reset Password</button>
+            </div>
+
+            <div class="alert alert-danger hidden" id="recovery-error-alert" role="alert"></div>
+            <div class="alert alert-success hidden" id="recovery-success-alert" role="alert"></div>
+            
+            <button type="button" class="btn btn-outline-secondary w-100 py-2" id="recovery-cancel-btn">Back to Login</button>
+        </form>
+        
+        <div class="auth-toggle">
+            <span id="auth-toggle-text">New to LitSynthese?</span>
+            <button class="btn btn-link p-0 ms-1" id="auth-toggle-btn">Create an Account</button>
+        </div>
+    </div>
+</div>

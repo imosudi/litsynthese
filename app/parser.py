@@ -76,10 +76,17 @@ class AcademicPaperParser:
         if len(title) > 200:
             title = title[:197] + "..."
             
+        creation_date = info.get("/CreationDate", "") if info and info.get("/CreationDate") else ""
+        if creation_date.startswith("D:"):
+            creation_date = creation_date[2:]
+        year_val = creation_date[:4] if creation_date else "Unknown Year"
+        if not year_val.isdigit():
+            year_val = "Unknown Year"
+            
         self.metadata = {
             "title": title or "Unknown Title",
             "authors": authors or "Unknown Authors",
-            "year": info.get("/CreationDate", "")[:4] if info and info.get("/CreationDate") else "Unknown Year",
+            "year": year_val,
             "pages_count": len(self.reader.pages)
         }
 

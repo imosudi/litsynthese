@@ -224,3 +224,8 @@ data/
 .env
 venv/
 
+# Local SQLite databases and test artifacts
+litsynthese.db
+*.pdf
+create_dummy_pdfs.py
+

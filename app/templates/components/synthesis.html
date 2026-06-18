@@ -1,0 +1,31 @@
+<div class="synthesis-container hidden" id="synthesis-view">
+    <header class="synthesis-header mb-4">
+        <h2>Cross-Document RAG Synthesis Engine</h2>
+        <p class="text-secondary mb-0">Query across all project papers to generate integrated answers with in-text citation links.</p>
+    </header>
+
+    <div class="synthesis-workspace-card card p-4 h-100 d-flex flex-column overflow-hidden" style="min-height: 550px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; backdrop-filter: blur(10px);">
+        <div class="synthesis-history flex-grow-1 overflow-y-auto mb-3 pe-1" id="synthesis-history" style="max-height: 420px;">
+            <div class="system-message p-3 rounded mb-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.95rem; border-radius: 8px;">
+                Hello! I am the Cross-Document Synthesis Engine. I can compare, contrast, and synthesize answers across all papers in this active project. Ask me questions like:
+                <ul class="mt-2 mb-0" style="padding-left: 20px; line-height: 1.6;">
+                    <li><em>"Compare the experimental designs and datasets used."</em></li>
+                    <li><em>"What are the common weaknesses or threats to validity across these studies?"</em></li>
+                    <li><em>"How does the methodology of each paper address performance limits?"</em></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="alert alert-danger hidden" id="synthesis-error-alert" role="alert"></div>
+
+        <form class="chat-input-area input-group" id="synthesis-form" style="background: transparent; border: none;">
+            <input type="text" id="synthesis-input" class="form-control" placeholder="Ask a cross-document synthesis question..." required autocomplete="off" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px 0 0 8px; padding: 12px 16px;">
+            <button type="submit" class="btn btn-primary send-btn" id="send-synthesis-btn" style="border-radius: 0 8px 8px 0; border: none; background: var(--accent-color); color: white; padding: 0 20px; display: flex; align-items: center; justify-content: center;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </form>
+    </div>
+</div>

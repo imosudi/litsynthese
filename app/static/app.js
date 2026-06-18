@@ -88,8 +88,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Sidebar Navigation Elements
     const navDashboard = document.getElementById("nav-dashboard");
+    const navMatrix = document.getElementById("nav-matrix");
+    const navSynthesis = document.getElementById("nav-synthesis");
     const navProfile = document.getElementById("nav-profile");
     const profileView = document.getElementById("profile-view");
+    const matrixView = document.getElementById("matrix-view");
+    const synthesisView = document.getElementById("synthesis-view");
+
+    // Matrix Elements
+    const matrixTableBody = document.getElementById("matrix-table-body");
+    const emptyMatrixState = document.getElementById("empty-matrix-state");
+    const latexCodePreview = document.getElementById("latex-code-preview");
+    const exportLatexBtn = document.getElementById("export-latex-btn");
+
+    // Synthesis Elements
+    const synthesisHistory = document.getElementById("synthesis-history");
+    const synthesisForm = document.getElementById("synthesis-form");
+    const synthesisInput = document.getElementById("synthesis-input");
+    const synthesisErrorAlert = document.getElementById("synthesis-error-alert");
 
     // Profile View stats elements
     const statProjectsCount = document.getElementById("stat-projects-count");
@@ -549,31 +565,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // View Switching Logic
     function switchView(viewName) {
+        if (navDashboard) navDashboard.classList.remove("active");
+        if (navMatrix) navMatrix.classList.remove("active");
+        if (navSynthesis) navSynthesis.classList.remove("active");
+        if (navProfile) navProfile.classList.remove("active");
+
+        if (welcomeView) welcomeView.classList.add("hidden");
+        if (analysisView) analysisView.classList.add("hidden");
+        if (matrixView) matrixView.classList.add("hidden");
+        if (synthesisView) synthesisView.classList.add("hidden");
+        if (profileView) profileView.classList.add("hidden");
+
         if (viewName === "dashboard") {
             if (navDashboard) navDashboard.classList.add("active");
-            if (navProfile) navProfile.classList.remove("active");
-            if (profileView) profileView.classList.add("hidden");
-            
             if (state.selectedPaper) {
-                welcomeView.classList.add("hidden");
                 analysisView.classList.remove("hidden");
             } else {
                 welcomeView.classList.remove("hidden");
-                analysisView.classList.add("hidden");
             }
+        } else if (viewName === "matrix") {
+            if (navMatrix) navMatrix.classList.add("active");
+            if (matrixView) matrixView.classList.remove("hidden");
+            loadComparisonMatrix();
+        } else if (viewName === "synthesis") {
+            if (navSynthesis) navSynthesis.classList.add("active");
+            if (synthesisView) synthesisView.classList.remove("hidden");
         } else if (viewName === "profile") {
-            if (navDashboard) navDashboard.classList.remove("active");
             if (navProfile) navProfile.classList.add("active");
             if (profileView) profileView.classList.remove("hidden");
-            welcomeView.classList.add("hidden");
-            analysisView.classList.add("hidden");
-            
             updateProfileMetrics();
             checkAPIConnectivity();
         }
     }
 
     if (navDashboard) navDashboard.addEventListener("click", () => switchView("dashboard"));
+    if (navMatrix) navMatrix.addEventListener("click", () => switchView("matrix"));
+    if (navSynthesis) navSynthesis.addEventListener("click", () => switchView("synthesis"));
     if (navProfile) navProfile.addEventListener("click", () => switchView("profile"));
 
     function updateProfileMetrics() {
@@ -735,6 +762,18 @@ document.addEventListener("DOMContentLoaded", () => {
          
          switchView("dashboard");
          state.selectedPaper = null;
+         
+         if (synthesisHistory) {
+             synthesisHistory.innerHTML = `
+            <div class="system-message p-3 rounded mb-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.95rem; border-radius: 8px;">
+                Hello! I am the Cross-Document Synthesis Engine. I can compare, contrast, and synthesize answers across all papers in this active project. Ask me questions like:
+                <ul class="mt-2 mb-0" style="padding-left: 20px; line-height: 1.6;">
+                    <li><em>"Compare the experimental designs and datasets used."</em></li>
+                    <li><em>"What are the common weaknesses or threats to validity across these studies?"</em></li>
+                    <li><em>"How does the methodology of each paper address performance limits?"</em></li>
+                </ul>
+            </div>`;
+         }
          
          fetchPapersList();
      });
@@ -1185,6 +1224,233 @@ document.addEventListener("DOMContentLoaded", () => {
             badge.textContent = kw;
             keywordsCloud.appendChild(badge);
         });
+    }
+
+    // 9. Comparison Matrix & Cross-Doc Synthesis Logic
+    async function loadComparisonMatrix() {
+        if (!state.selectedProjectId) {
+            if (matrixTableBody) matrixTableBody.innerHTML = "";
+            if (emptyMatrixState) emptyMatrixState.classList.remove("hidden");
+            if (latexCodePreview) latexCodePreview.textContent = "% Select a project first";
+            return;
+        }
+
+        try {
+            if (matrixTableBody) {
+                matrixTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-secondary py-4"><div class="spinner-border spinner-border-sm me-2" role="status"></div>Compiling literature matrix...</td></tr>';
+            }
+            if (emptyMatrixState) emptyMatrixState.classList.add("hidden");
+
+            const res = await fetch(`/api/project/${state.selectedProjectId}/matrix`);
+
+            if (!res.ok) {
+                throw new Error("Failed to load comparison matrix.");
+            }
+
+            const data = await res.json();
+            const items = data.items || [];
+            
+            if (matrixTableBody) {
+                matrixTableBody.innerHTML = "";
+                if (items.length === 0) {
+                    if (emptyMatrixState) emptyMatrixState.classList.remove("hidden");
+                    if (latexCodePreview) latexCodePreview.textContent = "% Upload papers to generate LaTeX table code";
+                    return;
+                }
+                
+                items.forEach(item => {
+                    const tr = document.createElement("tr");
+                    tr.style.borderBottom = "1px solid var(--border-color)";
+                    
+                    // Format contributions list
+                    const contribs = Array.isArray(item.contributions) 
+                        ? item.contributions.map(c => `<li>${escapeHtml(c)}</li>`).join("") 
+                        : escapeHtml(item.contributions);
+                    const contribsHtml = Array.isArray(item.contributions) 
+                        ? `<ul style="padding-left: 16px; margin: 0;">${contribs}</ul>` 
+                        : contribs;
+
+                    // Format limitations list
+                    const limitations = Array.isArray(item.limitations) 
+                        ? item.limitations.map(l => `<li>${escapeHtml(l)}</li>`).join("") 
+                        : escapeHtml(item.limitations);
+                    const limitationsHtml = Array.isArray(item.limitations) 
+                        ? `<ul style="padding-left: 16px; margin: 0;">${limitations}</ul>` 
+                        : limitations;
+
+                    tr.innerHTML = `
+                        <td class="fw-bold" style="color: var(--text-primary); vertical-align: top;">${escapeHtml(item.citation_key)}<br><span class="text-secondary fw-normal" style="font-size: 0.8rem;">${escapeHtml(item.title)}</span></td>
+                        <td style="vertical-align: top;">${escapeHtml(item.synopsis) || '<span class="text-secondary small">N/A</span>'}</td>
+                        <td style="vertical-align: top;">${escapeHtml(item.methodology) || '<span class="text-secondary small">N/A</span>'}</td>
+                        <td style="vertical-align: top;">${contribsHtml || '<span class="text-secondary small">N/A</span>'}</td>
+                        <td style="vertical-align: top;">${limitationsHtml || '<span class="text-secondary small">N/A</span>'}</td>
+                    `;
+                    matrixTableBody.appendChild(tr);
+                });
+            }
+
+            if (latexCodePreview) {
+                latexCodePreview.textContent = data.latex || "% No papers available";
+            }
+        } catch (err) {
+            console.error("Error loading matrix:", err);
+            if (matrixTableBody) {
+                matrixTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Error loading comparison matrix: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return "";
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    if (exportLatexBtn) {
+        exportLatexBtn.addEventListener("click", () => {
+            if (!latexCodePreview || !latexCodePreview.textContent) return;
+            const code = latexCodePreview.textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = exportLatexBtn.innerHTML;
+                exportLatexBtn.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Copied!
+                `;
+                setTimeout(() => {
+                    exportLatexBtn.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error("Failed to copy LaTeX code: ", err);
+                alert("Failed to copy code to clipboard.");
+            });
+        });
+    }
+
+    if (synthesisForm) {
+        synthesisForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const query = synthesisInput.value.trim();
+            if (!query) return;
+            
+            if (!state.selectedProjectId) {
+                alert("Please select a project first.");
+                return;
+            }
+            
+            // Append User Message to history
+            appendSynthesisMessage("user", query);
+            synthesisInput.value = "";
+            synthesisInput.disabled = true;
+            
+            // Show Loading message
+            const loadingMsgId = appendSynthesisMessage("assistant", "Synthesizing literature analysis across papers...", true);
+            
+            try {
+                if (synthesisErrorAlert) synthesisErrorAlert.classList.add("hidden");
+                
+                const modelSelect = document.getElementById("model-select");
+                const selectedModel = modelSelect ? modelSelect.value : "gemini";
+                
+                const res = await fetch(`/api/project/${state.selectedProjectId}/synthesize`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        model: selectedModel
+                    })
+                });
+                
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.detail || "Synthesis query failed.");
+                }
+                
+                const data = await res.json();
+                
+                // Replace loading message with actual response
+                removeSynthesisMessage(loadingMsgId);
+                appendSynthesisMessage("assistant", data.reply);
+            } catch (err) {
+                console.error("Synthesis error:", err);
+                removeSynthesisMessage(loadingMsgId);
+                if (synthesisErrorAlert) {
+                    synthesisErrorAlert.textContent = `Error: ${err.message}`;
+                    synthesisErrorAlert.classList.remove("hidden");
+                }
+            } finally {
+                synthesisInput.disabled = false;
+                synthesisInput.focus();
+            }
+        });
+    }
+
+    function appendSynthesisMessage(role, content, isLoading = false) {
+        if (!synthesisHistory) return null;
+        
+        const msgId = "synthesis-msg-" + Date.now();
+        const msgDiv = document.createElement("div");
+        msgDiv.id = msgId;
+        
+        if (role === "user") {
+            msgDiv.className = "user-message p-3 rounded mb-3 ms-auto text-end";
+            msgDiv.style.background = "rgba(168, 85, 247, 0.15)";
+            msgDiv.style.border = "1px solid rgba(168, 85, 247, 0.25)";
+            msgDiv.style.color = "var(--text-primary)";
+            msgDiv.style.maxWidth = "80%";
+            msgDiv.style.width = "fit-content";
+            msgDiv.textContent = content;
+        } else {
+            msgDiv.className = "assistant-message p-3 rounded mb-3";
+            msgDiv.style.background = "rgba(255, 255, 255, 0.02)";
+            msgDiv.style.border = "1px solid var(--border-color)";
+            msgDiv.style.color = "var(--text-primary)";
+            msgDiv.style.maxWidth = "90%";
+            
+            if (isLoading) {
+                msgDiv.innerHTML = `<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2" role="status"></div><span>${escapeHtml(content)}</span></div>`;
+            } else {
+                msgDiv.innerHTML = formatSynthesisMarkdown(content);
+            }
+        }
+        
+        synthesisHistory.appendChild(msgDiv);
+        synthesisHistory.scrollTop = synthesisHistory.scrollHeight;
+        return msgId;
+    }
+
+    function removeSynthesisMessage(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    function formatSynthesisMarkdown(text) {
+        if (!text) return "";
+        let formatted = escapeHtml(text);
+        
+        // Bold
+        formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+        
+        // Lists
+        formatted = formatted.replace(/^\s*-\s+(.*?)$/gm, "<li>$1</li>");
+        formatted = formatted.replace(/(<li>.*?<\/li>)/gs, "<ul>$1</ul>");
+        formatted = formatted.replace(/<\/ul>\s*<ul>/g, "");
+        
+        // Line breaks
+        formatted = formatted.replace(/\n/g, "<br>");
+        
+        // Citation highlighting
+        formatted = formatted.replace(/([A-Z][a-zA-Z]+(?:\s+et\s+al\.)?\s*\(\d{4}\))/g, '<span class="badge bg-primary-glow" style="font-weight: 500; font-size: 0.85rem; padding: 2px 6px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 4px; background: rgba(168, 85, 247, 0.1); color: var(--accent-color);">$1</span>');
+
+        return formatted;
     }
 
     // Initialise loading sequence based on authentication status

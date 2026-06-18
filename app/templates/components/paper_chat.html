@@ -1,0 +1,140 @@
+<!-- Paper Analysis Workspace -->
+<div class="analysis-container hidden" id="analysis-view">
+    <!-- Paper Title Block -->
+    <header class="paper-header">
+        <div class="paper-title-area">
+            <h2 id="paper-title">Paper Title Placeholder</h2>
+            <div class="paper-meta">
+                <span class="meta-item author" id="paper-authors">Authors Placeholder</span>
+                <span class="meta-item year" id="paper-year">2026</span>
+                <span class="meta-item pages" id="paper-pages">0 pages</span>
+            </div>
+        </div>
+        <button class="export-btn" id="export-summary-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export Summary (.md)
+        </button>
+    </header>
+
+    <!-- Workspace Body Split -->
+    <div class="workspace-body">
+        <!-- Navigation Tabs -->
+        <div class="tabs-nav">
+            <button class="tab-btn active" data-tab="summary">Structured Review</button>
+            <button class="tab-btn" data-tab="citations">Citation Linker</button>
+            <button class="tab-btn" data-tab="chat">Interactive Chat</button>
+            <button class="tab-btn" data-tab="keywords">Keywords Cloud</button>
+        </div>
+
+        <!-- Tab Contents Container -->
+        <div class="tab-contents">
+            <!-- Summary Tab -->
+            <div class="tab-pane active" id="tab-summary">
+                <div class="row g-4">
+                    <!-- Executive Synopsis -->
+                    <div class="col-12">
+                        <section class="summary-section card p-4">
+                            <h3 class="h5 fw-bold mb-3">Executive Synopsis</h3>
+                            <p id="summary-synopsis" class="summary-text-block mb-0">Loading synopsis...</p>
+                        </section>
+                    </div>
+
+                    <!-- Key Contributions -->
+                    <div class="col-md-6">
+                        <section class="summary-section card p-4 h-100">
+                            <h3 class="h5 fw-bold mb-3">Key Contributions</h3>
+                            <ul id="summary-contributions" class="summary-list mb-0">
+                                <!-- Rendered dynamically -->
+                            </ul>
+                        </section>
+                    </div>
+
+                    <!-- Methodology & Setup -->
+                    <div class="col-md-6">
+                        <section class="summary-section card p-4 h-100">
+                            <h3 class="h5 fw-bold mb-3">Methodology & Experimental Framework</h3>
+                            <p id="summary-methodology" class="summary-text-block mb-0">Loading methodology details...</p>
+                        </section>
+                    </div>
+
+                    <!-- Critical Review -->
+                    <div class="col-md-6">
+                        <section class="summary-section card p-4 h-100">
+                            <h3 class="h5 fw-bold mb-3">Critical Review & Limitations</h3>
+                            <ul id="summary-critique" class="summary-list critical mb-0">
+                                <!-- Rendered dynamically -->
+                            </ul>
+                        </section>
+                    </div>
+
+                    <!-- Future Directions -->
+                    <div class="col-md-6">
+                        <section class="summary-section card p-4 h-100">
+                            <h3 class="h5 fw-bold mb-3">Potential Future Research</h3>
+                            <ul id="summary-future" class="summary-list future mb-0">
+                                <!-- Rendered dynamically -->
+                            </ul>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Citations Tab -->
+            <div class="tab-pane" id="tab-citations">
+                <div class="row g-4 h-100 overflow-hidden">
+                    <div class="col-md-5 h-100 d-flex flex-column">
+                        <div class="references-sidebar card p-4 h-100 d-flex flex-column overflow-hidden">
+                            <h3 class="h6 text-uppercase fw-bold text-secondary mb-3">Bibliography Items</h3>
+                            <div class="references-list flex-grow-1 overflow-y-auto pe-1" id="references-list">
+                                <!-- Dynamically loaded list of references -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7 h-100 d-flex flex-column">
+                        <div class="citation-details card p-4 h-100 d-flex flex-column overflow-hidden">
+                            <h3 class="h6 text-uppercase fw-bold text-secondary mb-3">In-Text Citation Contexts</h3>
+                            <div class="contexts-container flex-grow-1 overflow-y-auto pe-1" id="contexts-container">
+                                <div class="empty-context-state text-center text-secondary py-5">Select a reference on the left to see where it was cited in the paper.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Tab -->
+            <div class="tab-pane" id="tab-chat">
+                <div class="chat-workspace card p-4 h-100 d-flex flex-column overflow-hidden">
+                    <div class="chat-history flex-grow-1 overflow-y-auto mb-3 pe-1" id="chat-history">
+                        <div class="system-message p-3 rounded mb-3">
+                            Hello! I have fully ingested this paper. Ask me anything about its methodology, results, contributions, or references, and I will answer grounded directly in the text.
+                        </div>
+                    </div>
+                    <form class="chat-input-area input-group" id="chat-form">
+                        <input type="text" id="chat-input" class="form-control" placeholder="Ask a question about this paper..." required autocomplete="off">
+                        <button type="submit" class="btn btn-primary send-btn" id="send-chat-btn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Keywords Tab -->
+            <div class="tab-pane" id="tab-keywords">
+                <div class="keywords-workspace card p-4 h-100 d-flex flex-column overflow-hidden">
+                    <h3 class="h5 fw-bold mb-2">Extracted Key Concepts</h3>
+                    <p class="text-secondary small mb-4">Key scientific concepts extracted from this document based on semantic relevance.</p>
+                    <div class="keywords-cloud flex-grow-1 overflow-y-auto" id="keywords-cloud">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

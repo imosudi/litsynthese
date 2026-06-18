@@ -1449,6 +1449,52 @@ body {
     text-decoration: underline;
 }
 
+/* LitSynthese Comparison Matrix & Cross-Doc Synthesis Styles */
+.matrix-container, .synthesis-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.5s ease;
+}
+
+.matrix-header h2, .synthesis-header h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: var(--text-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+}
+
+.matrix-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.matrix-table th {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 16px;
+}
+
+.matrix-table td {
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.matrix-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.synthesis-history {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
 .hidden {
     display: none !important;
 }

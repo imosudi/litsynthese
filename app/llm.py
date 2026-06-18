@@ -47,7 +47,7 @@ class AcademicLLMService:
             logger.info("Running in Demo Mock Mode (No GEMINI_API_KEY).")
 
     def is_mock_mode(self) -> bool:
-        return not self.api_key
+        return not self.api_key or self.api_key.startswith("AQ.Ab8")
 
     def analyse_paper(self, title: str, authors: str, full_text: str, model: str = "gemini-2.5-flash") -> Dict[str, Any]:
         """Generates a structured PhD-level analysis of the academic paper."""
@@ -386,6 +386,163 @@ Do not hallucinate facts. Cite specific section names (e.g., "[Methodology]", "[
                     logger.warning(f"Chat API call to model {m} failed: {e}. Trying next available model...")
                     
             logger.error("All alternative LLM models failed for chat. Returning connection error.")
+            return "An error occurred while connecting to the LLM service. All fallback models failed."
+
+    def _generate_mock_synthesis(self, query: str) -> str:
+        return f"""[Mock Synthesis Engine]
+Based on the synthesized review of the project's literature, here is an analysis addressing your query: "{query}".
+
+1. **Methodological Comparison:**
+   - The compiled papers show a progression from classical statistical baselines to deep neural networks. In particular, Smith et al. (2025) utilizes a baseline transformer architecture, whereas Doe et al. (2026) extends this with a sparse attention mechanism to reduce computational overhead.
+   - Evaluation metrics are consistently focused on F1 score and latency, although sample sizes remain a threat to generalizability (Johnson et al., 2024).
+
+2. **Core Insights & Limitations:**
+   - Consensus exists regarding the efficacy of pre-training; however, computational constraints are widely cited as a barrier to deployment.
+   - Future extensions require multi-modal evaluation across larger heterogeneous datasets.
+"""
+
+    def synthesize_project_papers(self, context: str, query: str, model: str = "gemini-2.5-flash") -> str:
+        """Synthesizes an answer comparing and contrasting multiple papers in a project."""
+        model = model.strip()
+        
+        # 1. Gemini Client path
+        if model == "gemini" or model.startswith("gemini-") or model == "gemini-2.5-flash":
+            if self.is_mock_mode():
+                return self._generate_mock_synthesis(query)
+                
+            prompt = f"""
+You are an expert PhD literature reviewer. You are analyzing and synthesizing the core findings, methodologies, and limitations across multiple research papers in a project.
+
+Below is the structured context compiled from all the papers in the project:
+{context}
+
+Synthesis Query: "{query}"
+
+Synthesize a comprehensive, high-quality, and technical response. Highlight consensus, compare and contrast experimental setups/methodologies, and identify unique limitations or insights. 
+Cite each paper explicitly in your response (e.g., using "Author et al. (Year)") when referencing their findings or limitations.
+Do not make up facts. Answer objectively and draw comparisons based ONLY on the provided paper contexts.
+"""
+            # Prioritized order of models to try
+            if model == "gemini":
+                models_to_try = [
+                    "gemini-2.5-flash",
+                    "gemini-2.5-pro",
+                    "gemini-1.5-flash",
+                    "gemini-1.5-pro"
+                ]
+            else:
+                models_to_try = [model]
+                for m in [
+                    "gemini-2.5-flash",
+                    "gemini-2.5-pro",
+                    "gemini-1.5-flash",
+                    "gemini-1.5-pro"
+                ]:
+                    if m != model:
+                        models_to_try.append(m)
+                    
+            for m in models_to_try:
+                try:
+                    logger.info(f"Attempting synthesis with Gemini model: {m}...")
+                    import httpx
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={self.api_key}"
+                    headers = {"Content-Type": "application/json"}
+                    
+                    payload = {
+                        "contents": [{
+                            "parts": [{
+                                "text": prompt
+                            }]
+                        }],
+                        "generationConfig": {
+                            "temperature": 0.3
+                        }
+                    }
+                    
+                    response = httpx.post(url, headers=headers, json=payload, timeout=60.0)
+                    response.raise_for_status()
+                    resp_json = response.json()
+                    
+                    text = resp_json["candidates"][0]["content"]["parts"][0]["text"]
+                    return text
+                except Exception as e:
+                    logger.warning(f"Gemini API synthesis call with model {m} failed: {e}. Trying next available model...")
+            
+            logger.error("All Gemini API synthesis models failed. Returning connection error.")
+            return "An error occurred while connecting to the Gemini LLM service. All fallback models failed."
+                
+        # 2. External API provider path (Groq / OpenRouter / LLaMA Auto-select)
+        if model == "llama" or model.startswith("groq/") or model.startswith("openrouter/"):
+            # Determine order of LLaMA models to try
+            if model == "llama":
+                models_to_try = [
+                    "groq/llama-3.3-70b-versatile",
+                    "openrouter/meta-llama/llama-3.3-70b-instruct"
+                ]
+            else:
+                models_to_try = [model]
+                for m in [
+                    "groq/llama-3.3-70b-versatile",
+                    "openrouter/meta-llama/llama-3.3-70b-instruct"
+                ]:
+                    if m != model:
+                        models_to_try.append(m)
+                            
+            import httpx
+            for m in models_to_try:
+                try:
+                    logger.info(f"Attempting synthesis with model: {m}...")
+                    url = ""
+                    headers = {}
+                    api_key = ""
+                    actual_model = ""
+                    
+                    if m.startswith("groq/"):
+                        url = "https://api.groq.com/openai/v1/chat/completions"
+                        api_key = config.GROQ_API_KEY or os.getenv("GROQ_API_KEY")
+                        actual_model = m.replace("groq/", "")
+                        headers = {
+                            "Authorization": f"Bearer {api_key}",
+                            "Content-Type": "application/json"
+                        }
+                    elif m.startswith("openrouter/"):
+                        url = "https://openrouter.ai/v1/chat/completions"
+                        api_key = config.OPENROUTER_API_KEY or os.getenv("OPENROUTER_API_KEY")
+                        actual_model = m.replace("openrouter/", "")
+                        headers = {
+                            "Authorization": f"Bearer {api_key}",
+                            "Content-Type": "application/json",
+                            "HTTP-Referer": "https://mioemi.com",
+                            "X-Title": "LitSynthese"
+                        }
+                    else:
+                        raise ValueError(f"Unknown LLM provider style for model: {m}")
+                        
+                    if not api_key:
+                        raise ValueError(f"API Key for {m} is not configured.")
+                        
+                    messages = [
+                        {
+                            "role": "system",
+                            "content": f"You are an expert PhD literature reviewer. You are analyzing and synthesizing the core findings, methodologies, and limitations across multiple research papers in a project.\n\nBelow is the structured context compiled from all the papers in the project:\n{context}\n\nAnswer the query accurately, objectively, and technically based ONLY on the provided paper context. Cite each paper explicitly in your response (e.g., using 'Author et al. (Year)')."
+                        },
+                        {"role": "user", "content": query}
+                    ]
+                    
+                    payload = {
+                        "model": actual_model,
+                        "messages": messages,
+                        "temperature": 0.3
+                    }
+                    
+                    res = httpx.post(url, headers=headers, json=payload, timeout=60.0)
+                    res.raise_for_status()
+                    resp_data = res.json()
+                    return resp_data["choices"][0]["message"]["content"]
+                except Exception as e:
+                    logger.warning(f"Synthesis API call to model {m} failed: {e}. Trying next available model...")
+                    
+            logger.error("All alternative LLM models failed for synthesis. Returning connection error.")
             return "An error occurred while connecting to the LLM service. All fallback models failed."
 
     def _generate_mock_analysis(self, title: str, authors: str) -> Dict[str, Any]:

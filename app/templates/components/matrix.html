@@ -1,0 +1,42 @@
+<div class="matrix-container hidden" id="matrix-view">
+    <header class="matrix-header mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Literature Comparison Matrix</h2>
+            <p class="text-secondary mb-0">Aspect-based structural comparison across all papers in the active project.</p>
+        </div>
+        <button class="export-btn" id="export-latex-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy LaTeX Tabular Code
+        </button>
+    </header>
+
+    <div class="matrix-table-card card p-4 mb-4" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; backdrop-filter: blur(10px);">
+        <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+            <table class="table matrix-table align-middle" id="matrix-table" style="color: var(--text-primary); margin-bottom: 0;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-color);">
+                        <th style="min-width: 180px; color: var(--text-secondary); font-weight: 600;">Paper Reference</th>
+                        <th style="min-width: 250px; color: var(--text-secondary); font-weight: 600;">Core Objectives</th>
+                        <th style="min-width: 250px; color: var(--text-secondary); font-weight: 600;">Methodology</th>
+                        <th style="min-width: 250px; color: var(--text-secondary); font-weight: 600;">Key Contributions</th>
+                        <th style="min-width: 250px; color: var(--text-secondary); font-weight: 600;">Limitations & Critique</th>
+                    </tr>
+                </thead>
+                <tbody id="matrix-table-body">
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+        <div class="empty-matrix-state text-center text-secondary py-5" id="empty-matrix-state">
+            No papers available. Upload paper PDFs to compile the comparison matrix.
+        </div>
+    </div>
+
+    <div class="latex-preview-card card p-4" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; backdrop-filter: blur(10px);">
+        <h3 class="h6 text-uppercase fw-bold text-secondary mb-3">LaTeX Code Preview (Overleaf Compatible)</h3>
+        <pre class="latex-code-block" style="background: rgba(0, 0, 0, 0.2); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); max-height: 250px; overflow-y: auto; margin-bottom: 0;"><code id="latex-code-preview" class="language-latex" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #a9b7c6; white-space: pre-wrap; word-break: break-all;">% Upload papers to generate LaTeX table code</code></pre>
+    </div>
+</div>
