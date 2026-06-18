@@ -425,6 +425,8 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .papers-list-section h2 {
@@ -438,10 +440,12 @@ body {
 .papers-list {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding-right: 4px;
+    min-width: 0;
 }
 
 .empty-list-state {
@@ -462,6 +466,8 @@ body {
     cursor: pointer;
     transition: all 0.25s ease;
     animation: fadeIn 0.4s ease;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .paper-item:hover {
@@ -483,6 +489,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    width: 100%;
 }
 
 .paper-item p {
