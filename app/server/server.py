@@ -29,7 +29,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="LitSynthese API", version="1.0.0")
 
 # Setup Jinja2 templates directory
-templates = Jinja2Templates(directory=os.path.abspath(os.path.join(os.path.dirname(__file__), "templates")))
+templates = Jinja2Templates(directory=os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "templates")))
 
 # Base directory for all projects
 PROJECTS_BASE_DIR = config.PROJECTS_BASE_DIR
@@ -789,6 +789,6 @@ Generated automatically by LitSynthese.
     )
 
 # Mount static files folder
-STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
+STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
 os.makedirs(STATIC_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

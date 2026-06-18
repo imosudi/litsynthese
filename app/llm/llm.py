@@ -2,7 +2,7 @@ import os
 import re
 import json
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -193,7 +193,7 @@ Provide a comprehensive, high-quality critique and summary. Focus on technical r
                             "Content-Type": "application/json"
                         }
                     elif m.startswith("openrouter/"):
-                        url = "https://openrouter.ai/api/v1/chat/completions"
+                        url = "https://openrouter.ai/v1/chat/completions"
                         api_key = config.OPENROUTER_API_KEY or os.getenv("OPENROUTER_API_KEY")
                         actual_model = m.replace("openrouter/", "")
                         headers = {
@@ -751,7 +751,6 @@ Do not make up facts. Answer objectively and draw comparisons based ONLY on the 
             for para in paragraphs:
                 para_lower = para.lower()
                 
-                # Calculate frequency score
                 # Calculate frequency score
                 match_score = 0.0
                 matched_keywords = set()
