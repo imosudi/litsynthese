@@ -256,23 +256,14 @@ You must return a valid JSON object matching the following structure:
         """Answers user query about the paper using context-grounded retrieval."""
         model = model.strip()
         
-        # Build context from relevant sections
-        relevant_text = ""
-        query_words = set(query.lower().split())
-        scored_sections = []
-        for sect_name, sect_data in sections.items():
-            sect_text = sect_data.get("text", "")
-            score = sum(1 for w in query_words if w in sect_text.lower())
-            scored_sections.append((score, sect_name, sect_text))
+        if self.is_mock_mode():
+            return self._generate_mock_chat_reply(title, sections, query)
             
-        scored_sections.sort(reverse=True, key=lambda x: x[0])
-        for score, name, text in scored_sections[:3]:
-            relevant_text += f"\n--- Section: {name.replace('_', ' ').title()} ---\n{text[:15000]}\n"
+        # Retrieve highly focused relevant passages using our intelligent RAG engine
+        relevant_text = self._retrieve_relevant_passages(sections, query, top_k=6)
 
         # 1. Gemini Client path
         if model == "gemini" or model.startswith("gemini-") or model == "gemini-2.5-flash":
-            if self.is_mock_mode():
-                return self._generate_mock_chat_reply(title, sections, query)
                 
             formatted_history = ""
             for msg in chat_history:
@@ -729,3 +720,105 @@ Do not make up facts. Answer objectively and draw comparisons based ONLY on the 
             return f"I searched the document **'{title}'** for references matching your query, but could not find direct passages. \n\n" \
                    f"The available sections in this paper are: **{available_sections}**. " \
                    f"Please refine your query using terms found in these sections (e.g., asking about 'methodology' or 'contributions')."
+
+    def _retrieve_relevant_passages(self, sections: Dict[str, Any], query: str, top_k: int = 6) -> str:
+        """
+        Retrieves the top_k most semantically relevant paragraphs across all paper sections
+        using a normalized keyword-overlap scoring mechanism.
+        """
+        # Clean query: lowercase and remove punctuation
+        q_cleaned = re.sub(r'[^\w\s]', ' ', query.lower())
+        query_words = [w for w in q_cleaned.split() if len(w) > 3]
+        
+        # Stop words to ignore
+        stop_words = {
+            "about", "above", "after", "again", "against", "all", "am", "an", "and",
+            "any", "are", "arent", "as", "at", "be", "because", "been", "before",
+            "being", "below", "between", "both", "but", "by", "cant", "cannot",
+            "could", "couldnt", "did", "didnt", "do", "does", "doesnt", "doing",
+            "dont", "down", "during", "each", "few", "for", "from", "further",
+            "had", "hadnt", "has", "hasnt", "have", "havent", "having", "he",
+            "her", "here", "hers", "herself", "him", "himself", "his", "how",
+            "i", "if", "in", "into", "is", "isnt", "it", "its", "itself", "more",
+            "most", "mustnt", "my", "myself", "no", "nor", "not", "of", "off",
+            "on", "once", "only", "or", "other", "ought", "our", "ours", "ourselves",
+            "out", "over", "own", "same", "shant", "she", "shes", "should", "shouldnt",
+            "so", "some", "such", "than", "that", "the", "their", "theirs", "them",
+            "themselves", "then", "there", "theres", "these", "they", "theyre",
+            "theyve", "this", "those", "through", "to", "too", "under", "until",
+            "up", "very", "was", "wasnt", "we", "were", "werent", "what", "whats",
+            "when", "wherent", "where", "which", "while", "who", "whom", "why",
+            "with", "wont", "would", "wouldnt", "you", "your", "yours", "yourself",
+            "yourselves"
+        }
+        
+        keywords = [w for w in query_words if w not in stop_words]
+        if not keywords:
+            # Fallback to all split words if only stop words present
+            keywords = [w for w in query_words]
+            
+        passages = []
+        for sect_name, sect_data in sections.items():
+            text = sect_data.get("text", "")
+            if not text:
+                continue
+            
+            # Split section text into paragraphs
+            paragraphs = [p.strip() for p in text.split("\n\n") if len(p.strip()) > 30]
+            if not paragraphs:
+                # Split by sentences if no double newlines
+                paragraphs = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if len(s.strip()) > 40]
+                
+            for para in paragraphs:
+                para_lower = para.lower()
+                
+                # Calculate frequency score
+                match_score = 0.0
+                matched_keywords = set()
+                for word in keywords:
+                    count = para_lower.count(word)
+                    if count > 0:
+                        match_score += count
+                        matched_keywords.add(word)
+                
+                # Bonus for matching unique query terms
+                match_score += len(matched_keywords) * 5
+                
+                # Length normalization to prevent selection of extremely long, wordy paragraphs
+                length = len(para_lower.split())
+                if length > 0:
+                    norm_score = match_score / (length ** 0.5)
+                else:
+                    norm_score = 0.0
+                    
+                if norm_score > 0:
+                    passages.append((norm_score, sect_name, para))
+                    
+        # Sort by normalized score descending
+        passages.sort(reverse=True, key=lambda x: x[0])
+        
+        # Format output context
+        retrieved_context = ""
+        seen_paras = set()
+        count = 0
+        for score, sect_name, para in passages:
+            para_prefix = para[:60].lower()
+            if para_prefix in seen_paras:
+                continue
+            seen_paras.add(para_prefix)
+            
+            sect_title = sect_name.replace("_", " ").title()
+            retrieved_context += f"\n--- Paragraph from Section: [{sect_title}] ---\n{para}\n"
+            
+            count += 1
+            if count >= top_k:
+                break
+                
+        if not retrieved_context:
+            # Fallback to main sections if query keywords found no matches
+            fallback_sections = ["abstract", "introduction", "methodology"]
+            for s in fallback_sections:
+                if s in sections and sections[s].get("text"):
+                    retrieved_context += f"\n--- Section: {s.title()} ---\n{sections[s]['text'][:5000]}\n"
+                    
+        return retrieved_context.strip()
