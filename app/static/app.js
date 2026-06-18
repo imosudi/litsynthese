@@ -849,7 +849,7 @@ document.addEventListener("DOMContentLoaded", () => {
          if (synthesisHistory) {
              synthesisHistory.innerHTML = `
             <div class="system-message p-3 rounded mb-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.95rem; border-radius: 8px;">
-                Hello! I am the Cross-Document Synthesis Engine. I can compare, contrast, and synthesize answers across all papers in this active project. Ask me questions like:
+                Hello! I am the Cross-Document Synthesis Engine. I can compare, contrast, and synthesise answers across all papers in this active project. Ask me questions like:
                 <ul class="mt-2 mb-0" style="padding-left: 20px; line-height: 1.6;">
                     <li><em>"Compare the experimental designs and datasets used."</em></li>
                     <li><em>"What are the common weaknesses or threats to validity across these studies?"</em></li>
@@ -962,7 +962,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     
                     if (percent === 100) {
                         progressStatus.textContent = `[${fileNum}/${totalFiles}] Analysing ${file.name}...`;
-                        if (overlayTitle) overlayTitle.textContent = `Analyzing Paper ${fileNum} of ${totalFiles}`;
+                        if (overlayTitle) overlayTitle.textContent = `Analysing Paper ${fileNum} of ${totalFiles}`;
                         if (overlaySubtitle) overlaySubtitle.textContent = `Extracting key contributions, methodology, and critique for "${file.name}" using AI...`;
                     } else {
                         progressStatus.textContent = `[${fileNum}/${totalFiles}] Uploading ${file.name} (${percent}%)...`;
@@ -1512,7 +1512,7 @@ document.addEventListener("DOMContentLoaded", () => {
             synthesisInput.disabled = true;
             
             // Show Loading message
-            const loadingMsgId = appendSynthesisMessage("assistant", "Synthesizing literature analysis across papers...", true);
+            const loadingMsgId = appendSynthesisMessage("assistant", "Synthesising literature analysis across papers...", true);
             
             try {
                 if (synthesisErrorAlert) synthesisErrorAlert.classList.add("hidden");

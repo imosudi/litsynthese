@@ -409,7 +409,7 @@ Do not hallucinate facts. Cite specific section names (e.g., "[Methodology]", "[
 
     def _generate_mock_synthesis(self, query: str) -> str:
         return f"""[Mock Synthesis Engine]
-Based on the synthesized review of the project's literature, here is an analysis addressing your query: "{query}".
+Based on the synthesised review of the project's literature, here is an analysis addressing your query: "{query}".
 
 1. **Methodological Comparison:**
    - The compiled papers show a progression from classical statistical baselines to deep neural networks. In particular, Smith et al. (2025) utilizes a baseline transformer architecture, whereas Doe et al. (2026) extends this with a sparse attention mechanism to reduce computational overhead.
@@ -421,7 +421,7 @@ Based on the synthesized review of the project's literature, here is an analysis
 """
 
     def synthesize_project_papers(self, context: str, query: str, model: str = "gemini-2.5-flash") -> str:
-        """Synthesizes an answer comparing and contrasting multiple papers in a project."""
+        """Synthesises an answer comparing and contrasting multiple papers in a project."""
         model = model.strip()
         
         # 1. Gemini Client path
@@ -430,14 +430,14 @@ Based on the synthesized review of the project's literature, here is an analysis
                 return self._generate_mock_synthesis(query)
                 
             prompt = f"""
-You are an expert PhD literature reviewer. You are analyzing and synthesizing the core findings, methodologies, and limitations across multiple research papers in a project.
+You are an expert PhD literature reviewer. You are analysing and synthesising the core findings, methodologies, and limitations across multiple research papers in a project.
 
 Below is the structured context compiled from all the papers in the project:
 {context}
 
 Synthesis Query: "{query}"
 
-Synthesize a comprehensive, high-quality, and technical response. Highlight consensus, compare and contrast experimental setups/methodologies, and identify unique limitations or insights. 
+Synthesise a comprehensive, high-quality, and technical response. Highlight consensus, compare and contrast experimental setups/methodologies, and identify unique limitations or insights. 
 Cite each paper explicitly in your response (e.g., using "Author et al. (Year)") when referencing their findings or limitations.
 Do not make up facts. Answer objectively and draw comparisons based ONLY on the provided paper contexts.
 """
@@ -543,7 +543,7 @@ Do not make up facts. Answer objectively and draw comparisons based ONLY on the 
                     messages = [
                         {
                             "role": "system",
-                            "content": f"You are an expert PhD literature reviewer. You are analyzing and synthesizing the core findings, methodologies, and limitations across multiple research papers in a project.\n\nBelow is the structured context compiled from all the papers in the project:\n{context}\n\nAnswer the query accurately, objectively, and technically based ONLY on the provided paper context. Cite each paper explicitly in your response (e.g., using 'Author et al. (Year)')."
+                            "content": f"You are an expert PhD literature reviewer. You are analysing and synthesising the core findings, methodologies, and limitations across multiple research papers in a project.\n\nBelow is the structured context compiled from all the papers in the project:\n{context}\n\nAnswer the query accurately, objectively, and technically based ONLY on the provided paper context. Cite each paper explicitly in your response (e.g., using 'Author et al. (Year)')."
                         },
                         {"role": "user", "content": query}
                     ]

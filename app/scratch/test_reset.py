@@ -81,7 +81,7 @@ class TestPasswordReset(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()["question"], "First Conference City?")
 
-        # Check behavior for non-existent email (should return a default question to protect privacy)
+        # Check behaviour for non-existent email (should return a default question to protect privacy)
         res_fake = self.client.get("/api/auth/forgot-password/question?email=non_existent@litsynthese.com")
         self.assertEqual(res_fake.status_code, 200)
         self.assertEqual(res_fake.json()["question"], "What is your recovery answer?")
