@@ -705,7 +705,8 @@ async def chat_paper(
         sections=data["sections"],
         chat_history=history_dicts,
         query=request.query,
-        model=request.model
+        model=request.model,
+        analysis=data.get("analysis")
     )
     
     # Save user message and assistant reply to DB

@@ -116,6 +116,23 @@ class TestSynthesisAndMatrix(unittest.TestCase):
         self.assertIn("reply", chat_data)
         self.assertIn("Grounded Response", chat_data["reply"])
 
+        # 4. Test interactive paper chat with query "list the keywords"
+        chat_payload_keywords = {
+            "query": "list the keywords",
+            "history": [],
+            "model": "gemini-2.5-flash"
+        }
+        chat_res_keywords = self.client.post(
+            f"/api/project/{self.project.id}/paper/{item['id']}/chat",
+            headers=self.headers,
+            json=chat_payload_keywords
+        )
+        self.assertEqual(chat_res_keywords.status_code, 200, chat_res_keywords.text)
+        chat_data_keywords = chat_res_keywords.json()
+        self.assertIn("reply", chat_data_keywords)
+        self.assertIn("Grounded Response", chat_data_keywords["reply"])
+        self.assertIn("From Section [Keywords]", chat_data_keywords["reply"])
+
     def test_cross_document_synthesis(self):
         # 1. Upload paper_attention.pdf
         pdf_path1 = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "paper_attention.pdf"))

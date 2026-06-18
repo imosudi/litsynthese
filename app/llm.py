@@ -252,15 +252,15 @@ You must return a valid JSON object matching the following structure:
             logger.error("All alternative LLM models failed for paper analysis. Falling back to mock analysis.")
             return self._generate_mock_analysis(title, authors)
 
-    def chat_about_paper(self, title: str, sections: Dict[str, Any], chat_history: List[Dict[str, str]], query: str, model: str = "gemini-2.5-flash") -> str:
+    def chat_about_paper(self, title: str, sections: Dict[str, Any], chat_history: List[Dict[str, str]], query: str, model: str = "gemini-2.5-flash", analysis: Optional[Dict[str, Any]] = None) -> str:
         """Answers user query about the paper using context-grounded retrieval."""
         model = model.strip()
         
         if self.is_mock_mode():
-            return self._generate_mock_chat_reply(title, sections, query)
+            return self._generate_mock_chat_reply(title, sections, query, analysis)
             
         # Retrieve highly focused relevant passages using our intelligent RAG engine
-        relevant_text = self._retrieve_relevant_passages(sections, query, top_k=6)
+        relevant_text = self._retrieve_relevant_passages(sections, query, top_k=6, analysis=analysis)
 
         # 1. Gemini Client path
         if model == "gemini" or model.startswith("gemini-") or model == "gemini-2.5-flash":
@@ -655,76 +655,24 @@ Do not make up facts. Answer objectively and draw comparisons based ONLY on the 
         
         return mock_templates[domain]
 
-    def _generate_mock_chat_reply(self, title: str, sections: Dict[str, Any], query: str) -> str:
+    def _generate_mock_chat_reply(self, title: str, sections: Dict[str, Any], query: str, analysis: Optional[Dict[str, Any]] = None) -> str:
         """
         An intelligent offline RAG chat engine that searches the actual paper sections
         for terms matching the query, extracting and formatting relevant passages.
         """
-        q = query.lower()
-        # Clean query: remove common punctuation and split into keywords
-        keywords = [w for w in re.sub(r'[^\w\s]', ' ', q).split() if len(w) > 3]
-        
-        # If no keywords, fallback to general help
-        if not keywords:
-            return f"I have loaded **'{title}'**. Please ask a specific question about its methodology, contributions, or results."
-
-        # Search for matching paragraphs across all sections
-        matches = []
-        for sect_name, sect_data in sections.items():
-            text = sect_data.get("text", "")
-            if not text:
-                continue
-            
-            # Split section text into paragraphs or sentences
-            paragraphs = [p.strip() for p in text.split("\n\n") if len(p.strip()) > 30]
-            if not paragraphs:
-                # Fallback to splitting by sentences if no double newlines
-                paragraphs = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if len(s.strip()) > 40]
-                
-            for para in paragraphs:
-                para_lower = para.lower()
-                # Score paragraph based on keyword occurrences
-                score = sum(3 if w in para_lower else 0 for w in keywords)
-                # Extra bonus for multi-word phrase matching
-                phrase = " ".join(keywords[:3])
-                if len(keywords) > 1 and phrase in para_lower:
-                    score += 10
-                
-                if score > 0:
-                    matches.append((score, sect_name, para))
-
-        if matches:
-            # Sort by relevance score descending
-            matches.sort(reverse=True, key=lambda x: x[0])
-            
-            # Group top matches
-            response = f"### Grounded Response from **'{title}'**\n\n"
-            seen = set()
-            count = 0
-            for score, sect, para in matches:
-                # Limit to top 3 unique paragraphs to keep it readable
-                para_norm = para[:50].lower()
-                if para_norm in seen:
-                    continue
-                seen.add(para_norm)
-                
-                sect_title = sect.replace("_", " ").title()
-                response += f"**From Section [{sect_title}]:**\n> {para}\n\n"
-                count += 1
-                if count >= 3:
-                    break
-            return response
+        relevant_text = self._retrieve_relevant_passages(sections, query, top_k=3, analysis=analysis)
+        if relevant_text:
+            return f"### Grounded Response from **'{title}'**\n\n{relevant_text}"
         else:
-            # Fallback if no matching passages found
             available_sections = ", ".join([s.replace("_", " ").title() for s in sections.keys() if sections[s].get("text")])
             return f"I searched the document **'{title}'** for references matching your query, but could not find direct passages. \n\n" \
                    f"The available sections in this paper are: **{available_sections}**. " \
                    f"Please refine your query using terms found in these sections (e.g., asking about 'methodology' or 'contributions')."
 
-    def _retrieve_relevant_passages(self, sections: Dict[str, Any], query: str, top_k: int = 6) -> str:
+    def _retrieve_relevant_passages(self, sections: Dict[str, Any], query: str, top_k: int = 6, analysis: Optional[Dict[str, Any]] = None) -> str:
         """
         Retrieves the top_k most semantically relevant paragraphs across all paper sections
-        using a normalized keyword-overlap scoring mechanism.
+        and structured analysis, using a normalized keyword-overlap scoring mechanism.
         """
         # Clean query: lowercase and remove punctuation
         q_cleaned = re.sub(r'[^\w\s]', ' ', query.lower())
@@ -754,24 +702,56 @@ Do not make up facts. Answer objectively and draw comparisons based ONLY on the 
         
         keywords = [w for w in query_words if w not in stop_words]
         if not keywords:
-            # Fallback to all split words if only stop words present
             keywords = [w for w in query_words]
             
+        # Build search sections, including extra metadata from analysis if available
+        search_sections = dict(sections)
+        if analysis:
+            if "synopsis" in analysis and analysis["synopsis"]:
+                search_sections["executive_synopsis"] = {"text": analysis["synopsis"]}
+            if "contributions" in analysis and analysis["contributions"]:
+                search_sections["key_contributions"] = {"text": "\n".join(analysis["contributions"])}
+            if "critical_review" in analysis and analysis["critical_review"]:
+                search_sections["critical_review_and_limitations"] = {"text": "\n".join(analysis["critical_review"])}
+            if "future_work" in analysis and analysis["future_work"]:
+                search_sections["future_research"] = {"text": "\n".join(analysis["future_work"])}
+            if "keywords" in analysis and analysis["keywords"]:
+                search_sections["keywords"] = {"text": ", ".join(analysis["keywords"])}
+
         passages = []
-        for sect_name, sect_data in sections.items():
+        for sect_name, sect_data in search_sections.items():
+            # Skip references section unless query specifically asks for references/bibliography
+            if sect_name == "references" and not any(w in query.lower() for w in ["reference", "bibliography", "cite", "citation"]):
+                continue
+                
             text = sect_data.get("text", "")
             if not text:
                 continue
             
             # Split section text into paragraphs
-            paragraphs = [p.strip() for p in text.split("\n\n") if len(p.strip()) > 30]
-            if not paragraphs:
-                # Split by sentences if no double newlines
-                paragraphs = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if len(s.strip()) > 40]
+            raw_paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+            paragraphs = []
+            for rp in raw_paragraphs:
+                # If paragraph is too long (over 1000 characters), split it into smaller sentences/chunks
+                if len(rp) > 1000:
+                    sentences = re.split(r'(?<=[.!?])\s+', rp)
+                    current_chunk = ""
+                    for sent in sentences:
+                        if len(current_chunk) + len(sent) < 800:
+                            current_chunk += (" " if current_chunk else "") + sent
+                        else:
+                            if current_chunk:
+                                paragraphs.append(current_chunk.strip())
+                            current_chunk = sent
+                    if current_chunk:
+                        paragraphs.append(current_chunk.strip())
+                else:
+                    paragraphs.append(rp)
                 
             for para in paragraphs:
                 para_lower = para.lower()
                 
+                # Calculate frequency score
                 # Calculate frequency score
                 match_score = 0.0
                 matched_keywords = set()
@@ -779,6 +759,11 @@ Do not make up facts. Answer objectively and draw comparisons based ONLY on the 
                     count = para_lower.count(word)
                     if count > 0:
                         match_score += count
+                        matched_keywords.add(word)
+                    
+                    # Bonus if the query word is in the section name itself
+                    if word in sect_name.lower():
+                        match_score += 15.0
                         matched_keywords.add(word)
                 
                 # Bonus for matching unique query terms
@@ -808,7 +793,7 @@ Do not make up facts. Answer objectively and draw comparisons based ONLY on the 
             seen_paras.add(para_prefix)
             
             sect_title = sect_name.replace("_", " ").title()
-            retrieved_context += f"\n--- Paragraph from Section: [{sect_title}] ---\n{para}\n"
+            retrieved_context += f"\n**From Section [{sect_title}]:**\n> {para}\n\n"
             
             count += 1
             if count >= top_k:
@@ -818,7 +803,7 @@ Do not make up facts. Answer objectively and draw comparisons based ONLY on the 
             # Fallback to main sections if query keywords found no matches
             fallback_sections = ["abstract", "introduction", "methodology"]
             for s in fallback_sections:
-                if s in sections and sections[s].get("text"):
-                    retrieved_context += f"\n--- Section: {s.title()} ---\n{sections[s]['text'][:5000]}\n"
+                if s in search_sections and search_sections[s].get("text"):
+                    retrieved_context += f"\n**From Section [{s.title()}]:**\n> {search_sections[s]['text'][:800]}...\n\n"
                     
         return retrieved_context.strip()
