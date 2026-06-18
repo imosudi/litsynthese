@@ -100,6 +100,22 @@ class TestSynthesisAndMatrix(unittest.TestCase):
         self.assertIn("\\begin{table}", latex_code)
         self.assertIn("Smith (2026)", latex_code)
 
+        # 3. Test interactive paper chat endpoint
+        chat_payload = {
+            "query": "methodology",
+            "history": [],
+            "model": "gemini-2.5-flash"
+        }
+        chat_res = self.client.post(
+            f"/api/project/{self.project.id}/paper/{item['id']}/chat",
+            headers=self.headers,
+            json=chat_payload
+        )
+        self.assertEqual(chat_res.status_code, 200, chat_res.text)
+        chat_data = chat_res.json()
+        self.assertIn("reply", chat_data)
+        self.assertIn("Grounded Response", chat_data["reply"])
+
     def test_cross_document_synthesis(self):
         # 1. Upload paper_attention.pdf
         pdf_path1 = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "paper_attention.pdf"))

@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import logging
 from typing import Dict, Any, List
@@ -271,7 +272,7 @@ You must return a valid JSON object matching the following structure:
         # 1. Gemini Client path
         if model == "gemini" or model.startswith("gemini-") or model == "gemini-2.5-flash":
             if self.is_mock_mode():
-                return self._generate_mock_chat_reply(title, query)
+                return self._generate_mock_chat_reply(title, sections, query)
                 
             formatted_history = ""
             for msg in chat_history:
@@ -663,14 +664,68 @@ Do not make up facts. Answer objectively and draw comparisons based ONLY on the 
         
         return mock_templates[domain]
 
-    def _generate_mock_chat_reply(self, title: str, query: str) -> str:
-        """Returns a plausible context-aware response based on key search words."""
+    def _generate_mock_chat_reply(self, title: str, sections: Dict[str, Any], query: str) -> str:
+        """
+        An intelligent offline RAG chat engine that searches the actual paper sections
+        for terms matching the query, extracting and formatting relevant passages.
+        """
         q = query.lower()
-        if "methodology" in q or "how" in q or "experiment" in q:
-            return f"According to the methodology section of **'{title}'**, the system utilises a custom pipeline. Text/data processing is done in stages, using localised optimisation parameters. The baseline performance was evaluated against benchmark datasets, indicating significant improvements in accuracy and latency."
-        elif "contribution" in q or "novelty" in q or "what is new" in q:
-            return f"The main contributions of **'{title}'** include:\n1. Formulating a novel optimisation framework to address bottleneck inefficiencies.\n2. Implementing a production-ready prototype that shows competitive results.\n3. Creating an open-source benchmark suite for future research comparisons."
-        elif "limitation" in q or "weakness" in q or "critique" in q or "fault" in q:
-            return f"The critical analysis of **'{title}'** reveals a few limitations:\n- Idealized system assumptions that may not hold under complex real-world conditions.\n- Lack of thorough comparison with the latest 2025/2026 baselines.\n- Some hardware configurations are hard-coded, reducing portability."
+        # Clean query: remove common punctuation and split into keywords
+        keywords = [w for w in re.sub(r'[^\w\s]', ' ', q).split() if len(w) > 3]
+        
+        # If no keywords, fallback to general help
+        if not keywords:
+            return f"I have loaded **'{title}'**. Please ask a specific question about its methodology, contributions, or results."
+
+        # Search for matching paragraphs across all sections
+        matches = []
+        for sect_name, sect_data in sections.items():
+            text = sect_data.get("text", "")
+            if not text:
+                continue
+            
+            # Split section text into paragraphs or sentences
+            paragraphs = [p.strip() for p in text.split("\n\n") if len(p.strip()) > 30]
+            if not paragraphs:
+                # Fallback to splitting by sentences if no double newlines
+                paragraphs = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if len(s.strip()) > 40]
+                
+            for para in paragraphs:
+                para_lower = para.lower()
+                # Score paragraph based on keyword occurrences
+                score = sum(3 if w in para_lower else 0 for w in keywords)
+                # Extra bonus for multi-word phrase matching
+                phrase = " ".join(keywords[:3])
+                if len(keywords) > 1 and phrase in para_lower:
+                    score += 10
+                
+                if score > 0:
+                    matches.append((score, sect_name, para))
+
+        if matches:
+            # Sort by relevance score descending
+            matches.sort(reverse=True, key=lambda x: x[0])
+            
+            # Group top matches
+            response = f"### Grounded Response from **'{title}'**\n\n"
+            seen = set()
+            count = 0
+            for score, sect, para in matches:
+                # Limit to top 3 unique paragraphs to keep it readable
+                para_norm = para[:50].lower()
+                if para_norm in seen:
+                    continue
+                seen.add(para_norm)
+                
+                sect_title = sect.replace("_", " ").title()
+                response += f"**From Section [{sect_title}]:**\n> {para}\n\n"
+                count += 1
+                if count >= 3:
+                    break
+            return response
         else:
-            return f"In the context of the paper **'{title}'**, the research focuses on resolving complex structural issues. If you ask specifically about its *Methodology*, *Key Contributions*, or *Limitations*, I can retrieve specific sections and explain how the authors designed their solutions."
+            # Fallback if no matching passages found
+            available_sections = ", ".join([s.replace("_", " ").title() for s in sections.keys() if sections[s].get("text")])
+            return f"I searched the document **'{title}'** for references matching your query, but could not find direct passages. \n\n" \
+                   f"The available sections in this paper are: **{available_sections}**. " \
+                   f"Please refine your query using terms found in these sections (e.g., asking about 'methodology' or 'contributions')."

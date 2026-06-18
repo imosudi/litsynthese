@@ -113,6 +113,12 @@
                             Hello! I have fully ingested this paper. Ask me anything about its methodology, results, contributions, or references, and I will answer grounded directly in the text.
                         </div>
                     </div>
+                    <div class="chat-suggestions mb-2 d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary suggestion-chip" data-prompt="What is the primary methodology and setup used?" style="border-radius: 16px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); color: var(--text-secondary);">Methodology</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary suggestion-chip" data-prompt="What are the key contributions of this paper?" style="border-radius: 16px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); color: var(--text-secondary);">Contributions</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary suggestion-chip" data-prompt="Are there any critical limitations or weaknesses mentioned?" style="border-radius: 16px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); color: var(--text-secondary);">Limitations</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary suggestion-chip" data-prompt="Summarise the future work and research directions." style="border-radius: 16px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); color: var(--text-secondary);">Future Work</button>
+                    </div>
                     <form class="chat-input-area input-group" id="chat-form">
                         <input type="text" id="chat-input" class="form-control" placeholder="Ask a question about this paper..." required autocomplete="off">
                         <button type="submit" class="btn btn-primary send-btn" id="send-chat-btn">

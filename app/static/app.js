@@ -1344,6 +1344,17 @@ document.addEventListener("DOMContentLoaded", () => {
         chatHistory.scrollTop = chatHistory.scrollHeight;
     });
 
+    // Handle suggested chat prompts/suggestion chips click
+    document.addEventListener("click", (e) => {
+        if (e.target && e.target.classList.contains("suggestion-chip")) {
+            const prompt = e.target.getAttribute("data-prompt");
+            if (prompt && chatInput) {
+                chatInput.value = prompt;
+                chatForm.dispatchEvent(new Event("submit"));
+            }
+        }
+    });
+
     function appendChatBubble(role, content) {
         const bubble = document.createElement("div");
         bubble.className = `chat-bubble ${role}`;
