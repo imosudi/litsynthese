@@ -10,20 +10,61 @@
 
         <!-- Main Workspace -->
         <main class="workspace">
-            <!-- Initial Welcome State -->
-            {% include "components/dashboard.html" %}
+            <div class="workspace-content flex-grow-1">
+                <!-- Initial Welcome State -->
+                {% include "components/dashboard.html" %}
 
-            <!-- Paper Analysis Workspace -->
-            {% include "components/paper_chat.html" %}
+                <!-- Paper Analysis Workspace -->
+                {% include "components/paper_chat.html" %}
 
-            <!-- Literature Comparison Matrix -->
-            {% include "components/matrix.html" %}
+                <!-- Literature Comparison Matrix -->
+                {% include "components/matrix.html" %}
 
-            <!-- Cross-Document RAG Synthesis Engine -->
-            {% include "components/synthesis.html" %}
+                <!-- Cross-Document RAG Synthesis Engine -->
+                {% include "components/synthesis.html" %}
 
-            <!-- User Profile & Theme Customisation Workspace -->
-            {% include "components/profile.html" %}
+                <!-- User Profile & Theme Customisation Workspace -->
+                {% include "components/profile.html" %}
+            </div>
+
+            <!-- Footer (Moved to Middle Panel) -->
+            <footer class="copyright-footer mt-auto py-3">
+                &copy; 2026 Mosudi Isiaka O.<br>
+                <a href="mailto:info@mioemi.com">info@mioemi.com</a> | 
+                <a href="https://mioemi.com" target="_blank" rel="noopener">mioemi.com</a>
+            </footer>
         </main>
+
+        <!-- Right Panel (Third Panel) -->
+        <aside class="right-panel">
+            <div class="right-panel-header">
+                <h2>Settings</h2>
+                <div class="theme-toggle-wrapper">
+                    <span>Theme</span>
+                    <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Theme">
+                        <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </button>
+                    <span id="theme-flash-name" class="theme-flash-name"></span>
+                </div>
+            </div>
+
+            <!-- Ingested Papers List (Moved to Right Panel) -->
+            <div class="papers-list-section">
+                <h2>Parsed Literature</h2>
+                <div class="papers-list" id="papers-list">
+                    <div class="empty-list-state">No papers uploaded yet</div>
+                </div>
+            </div>
+        </aside>
     </div>
 {% endblock %}
