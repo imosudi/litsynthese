@@ -16,7 +16,7 @@ import config
 from app.parser import AcademicPaperParser
 from app.llm import AcademicLLMService
 from app.database import Base, engine, get_db
-from app.models import User, Project, AcademicPaper, ChatMessage
+from app.models import User, Project, AcademicPaper, ChatMessage, UserProfile
 from app.auth import get_current_user, create_access_token
 
 # Setup logger
