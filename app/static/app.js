@@ -802,7 +802,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 fileInput.value = "";
                 return;
             }
-            handleFileUpload(e.target.files[0]);
+            handleMultipleFilesUpload(e.target.files);
+            fileInput.value = "";
         }
     });
 
@@ -825,81 +826,119 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
         if (e.dataTransfer.files.length > 0) {
-            handleFileUpload(e.dataTransfer.files[0]);
+            handleMultipleFilesUpload(e.dataTransfer.files);
         }
     });
 
-    function handleFileUpload(file) {
-        const isPdf = file.type === "application/pdf" || (file.name && file.name.toLowerCase().endsWith(".pdf"));
-        if (!isPdf) {
-            alert("Please select a valid PDF file.");
-            fileInput.value = "";
+    async function handleMultipleFilesUpload(filesList) {
+        const pdfFiles = Array.from(filesList).filter(file => {
+            return file.type === "application/pdf" || (file.name && file.name.toLowerCase().endsWith(".pdf"));
+        });
+
+        if (pdfFiles.length === 0) {
+            alert("Please drop or select valid PDF files.");
             return;
         }
 
-        const formData = new FormData();
-        formData.append("file", file);
-
-        // Show progress UI
         progressContainer.classList.remove("hidden");
-        progressBar.style.width = "0%";
-        progressStatus.textContent = "Uploading PDF...";
+        
+        let successCount = 0;
+        let lastUploadedPaperId = null;
+        const errors = [];
 
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", `/api/project/${state.selectedProjectId}/upload?model=${state.selectedModelId}`, true);
-
-        // Inject Authorization Bearer token into raw XMLHttpRequest
-        const token = localStorage.getItem("access_token");
-        if (token) {
-            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        for (let i = 0; i < pdfFiles.length; i++) {
+            const file = pdfFiles[i];
+            const fileNum = i + 1;
+            const totalFiles = pdfFiles.length;
+            
+            progressBar.style.width = "0%";
+            progressStatus.textContent = `[${fileNum}/${totalFiles}] Uploading ${file.name}...`;
+            
+            try {
+                const uploadedPaper = await uploadSingleFile(file, (percent) => {
+                    progressBar.style.width = `${percent}%`;
+                    if (percent === 100) {
+                        progressStatus.textContent = `[${fileNum}/${totalFiles}] Analysing ${file.name}...`;
+                    } else {
+                        progressStatus.textContent = `[${fileNum}/${totalFiles}] Uploading ${file.name} (${percent}%)...`;
+                    }
+                });
+                
+                successCount++;
+                lastUploadedPaperId = uploadedPaper.id;
+            } catch (err) {
+                console.error(`Failed to upload ${file.name}:`, err);
+                errors.push(`${file.name}: ${err.message || err}`);
+            }
         }
 
-        // Track upload progress
-        xhr.upload.addEventListener("progress", (e) => {
-            if (e.lengthComputable) {
-                const percent = Math.round((e.loaded / e.total) * 100);
-                progressBar.style.width = `${percent}%`;
-                if (percent === 100) {
-                    progressStatus.textContent = `Analysing Paper with LLM (${state.selectedModelId})...`;
-                } else {
-                    progressStatus.textContent = `Uploading PDF (${percent}%)...`;
-                }
-            }
-        });
-
-        // Request complete
-        xhr.onload = function() {
-            fileInput.value = ""; // Reset input value
-            if (xhr.status === 200) {
-                const response = JSON.parse(xhr.responseText);
-                progressStatus.textContent = "Parsing Complete!";
-                progressBar.style.width = "100%";
-                setTimeout(() => {
-                    progressContainer.classList.add("hidden");
-                }, 1000);
-                
-                // Refresh list and select paper
-                fetchPapersList().then(() => {
-                    selectPaper(response.id);
-                });
-            } else {
-                let errorMsg = "Failed to upload and parse paper.";
-                try {
-                    const err = JSON.parse(xhr.responseText);
-                    errorMsg = err.detail || errorMsg;
-                } catch(e) {}
-                alert(errorMsg);
+        if (errors.length > 0) {
+            progressStatus.textContent = "Completed with errors";
+            progressBar.style.width = "100%";
+            setTimeout(() => {
                 progressContainer.classList.add("hidden");
+            }, 2000);
+            alert(`Upload completed with some errors:\n\n${errors.join("\n")}`);
+        } else {
+            progressStatus.textContent = "All papers parsed successfully!";
+            progressBar.style.width = "100%";
+            setTimeout(() => {
+                progressContainer.classList.add("hidden");
+            }, 1500);
+        }
+
+        if (successCount > 0) {
+            await fetchPapersList();
+            if (lastUploadedPaperId) {
+                selectPaper(lastUploadedPaperId);
             }
-        };
+        }
+    }
 
-        xhr.onerror = function() {
-            fileInput.value = ""; // Reset input value
-            alert("A network error occurred during upload.");
-            progressContainer.classList.add("hidden");
-        };
+    function uploadSingleFile(file, onProgress) {
+        return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            formData.append("file", file);
 
-        xhr.send(formData);
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", `/api/project/${state.selectedProjectId}/upload?model=${state.selectedModelId}`, true);
+
+            const token = localStorage.getItem("access_token");
+            if (token) {
+                xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+            }
+
+            xhr.upload.addEventListener("progress", (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    onProgress(percent);
+                }
+            });
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        resolve(response);
+                    } catch (e) {
+                        reject(new Error("Invalid response format."));
+                    }
+                } else {
+                    let errorMsg = "Upload failed.";
+                    try {
+                        const err = JSON.parse(xhr.responseText);
+                        errorMsg = err.detail || errorMsg;
+                    } catch(e) {}
+                    reject(new Error(errorMsg));
+                }
+            };
+
+            xhr.onerror = function() {
+                reject(new Error("Network error."));
+            };
+
+            xhr.send(formData);
+        });
     }
 
     // 2. Fetch Ingested Papers List
