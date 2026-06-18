@@ -78,5 +78,24 @@ class TestAcademicCitationEngine(unittest.TestCase):
         res = self.engine.lookup_by_doi("10.9999/notfound")
         self.assertIsNone(res)
 
+    def test_title_similarity(self):
+        # Test exact match
+        self.assertGreaterEqual(self.engine._title_similarity("Attention Is All You Need", "Attention Is All You Need"), 0.99)
+        
+        # Test subset/subtitle truncation matches
+        self.assertGreaterEqual(self.engine._title_similarity(
+            "Transparency as Architecture",
+            "Transparency as Architecture: Structural Compliance Gaps in EU AI Act Article 50 II"
+        ), 0.99)
+        
+        # Test completely different titles
+        self.assertLess(self.engine._title_similarity(
+            "Transparency as Architecture: Structural Compliance Gaps in EU AI Act Article 50 II",
+            "Take It All: Ensemble Retrieval for Multimodal Evidence Aggregation"
+        ), 0.1)
+
+        # Test partial matches
+        self.assertGreaterEqual(self.engine._title_similarity("Deep Learning for Agriculture", "Machine Learning in Agriculture"), 0.6)
+
 if __name__ == "__main__":
     unittest.main()

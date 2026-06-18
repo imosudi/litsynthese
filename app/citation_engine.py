@@ -71,18 +71,26 @@ class AcademicCitationEngine:
                 query_str = first_page_text[:200]
             else:
                 return None
+            is_title_query = False
         else:
             query_str = title
+            is_title_query = True
 
         # 1. Search CrossRef
         crossref_match = self._search_crossref(query_str)
         if crossref_match:
-            return crossref_match
+            if not is_title_query or self._title_similarity(query_str, crossref_match["title"]) >= 0.6:
+                return crossref_match
+            else:
+                logger.warning(f"Rejected CrossRef match due to low title similarity. Query: '{query_str}', Found: '{crossref_match['title']}'")
 
         # 2. Fallback to arXiv Search
         arxiv_match = self._search_arxiv(query_str)
         if arxiv_match:
-            return arxiv_match
+            if not is_title_query or self._title_similarity(query_str, arxiv_match["title"]) >= 0.6:
+                return arxiv_match
+            else:
+                logger.warning(f"Rejected arXiv match due to low title similarity. Query: '{query_str}', Found: '{arxiv_match['title']}'")
 
         return None
 
@@ -183,3 +191,28 @@ class AcademicCitationEngine:
             "doi": message.get("DOI"),
             "source": "CrossRef"
         }
+
+    def _title_similarity(self, query: str, candidate: str) -> float:
+        """
+        Calculates word-overlap similarity score between query and candidate titles
+        using a subset/superset-friendly metric.
+        """
+        def get_words(title_str: str) -> set[str]:
+            # Convert to lower, replace punctuation with spaces, and split
+            title_str = re.sub(r'[^\w\s]', ' ', title_str.lower())
+            words = set(title_str.split())
+            stop_words = {
+                "a", "an", "the", "in", "on", "at", "for", "to", "and", "or", "of", 
+                "as", "by", "with", "is", "are", "from", "through", "about"
+            }
+            return words - stop_words
+
+        words_query = get_words(query)
+        words_candidate = get_words(candidate)
+
+        if not words_query or not words_candidate:
+            return 0.0
+
+        intersection = words_query & words_candidate
+        # Return overlap score relative to the shorter word set (subset-friendly)
+        return len(intersection) / min(len(words_query), len(words_candidate))
