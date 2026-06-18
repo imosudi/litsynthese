@@ -664,8 +664,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 state.projects = await res.json();
                 
                 const exists = state.projects.some(p => p.id === state.selectedProjectId);
-                if (!exists && state.projects.length > 0) {
-                    state.selectedProjectId = state.projects[0].id;
+                if (!exists) {
+                    state.selectedProjectId = state.projects.length > 0 ? state.projects[0].id : "";
                     localStorage.setItem("selectedProjectId", state.selectedProjectId);
                 }
                 
@@ -927,7 +927,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 2000);
             
             let extraGuidance = "";
-            if (errors.some(errStr => errStr.includes("Project not found") || errStr.includes("unauthorized"))) {
+            if (errors.some(errStr => {
+                const lower = errStr.toLowerCase();
+                return lower.includes("project not found") || lower.includes("unauthorized");
+            })) {
                 extraGuidance = "\n\nTroubleshooting Tip: It looks like you do not have an active project selected or authorization expired. Please ensure a project is selected in the 'Active Project' dropdown in the left sidebar.";
             }
             alert(`Upload completed with some errors:\n\n${errors.join("\n")}${extraGuidance}`);
