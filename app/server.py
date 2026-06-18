@@ -371,6 +371,7 @@ def generate_latex_matrix(items: List[Dict[str, Any]]) -> str:
 @app.get("/api/project/{project_id}/matrix")
 async def get_project_matrix(
     project_id: str,
+    style: str = "apa",
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -385,14 +386,33 @@ async def get_project_matrix(
         year = str(paper.year) if paper.year else "N/A"
         
         author_list = [a.strip() for a in authors.split(",") if a.strip()]
-        if author_list:
-            first_author = author_list[0].split()[-1]
-            if len(author_list) > 1:
-                citation_key = f"{first_author} et al. ({year})"
+        idx = papers.index(paper) + 1
+        if style == "ieee":
+            citation_key = f"[{idx}]"
+        elif style == "harvard":
+            if author_list:
+                first_author = author_list[0].split()[-1]
+                if len(author_list) > 1:
+                    citation_key = f"({first_author} et al., {year})"
+                else:
+                    citation_key = f"({first_author}, {year})"
             else:
-                citation_key = f"{first_author} ({year})"
-        else:
-            citation_key = f"Unknown ({year})"
+                citation_key = f"(Unknown, {year})"
+        elif style == "bibtex":
+            if author_list:
+                first_author = "".join(c for c in author_list[0].split()[-1] if c.isalnum())
+                citation_key = f"{first_author.lower()}{year}"
+            else:
+                citation_key = f"unknown{year}"
+        else: # apa / default
+            if author_list:
+                first_author = author_list[0].split()[-1]
+                if len(author_list) > 1:
+                    citation_key = f"{first_author} et al. ({year})"
+                else:
+                    citation_key = f"{first_author} ({year})"
+            else:
+                citation_key = f"Unknown ({year})"
             
         synopsis = ""
         methodology = ""
@@ -492,6 +512,8 @@ async def upload_paper(
     project_id: str, 
     model: str = "gemini-2.5-flash", 
     file: UploadFile = File(...),
+    focus: str = "standard",
+    temperature: float = 0.2,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -529,7 +551,9 @@ async def upload_paper(
             title=parsed_data["metadata"]["title"],
             authors=parsed_data["metadata"]["authors"],
             full_text=full_text,
-            model=model
+            model=model,
+            focus=focus,
+            temperature=temperature
         )
         
         # Combine parsed structure + summary analysis

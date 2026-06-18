@@ -49,10 +49,28 @@ class AcademicLLMService:
     def is_mock_mode(self) -> bool:
         return not self.api_key or self.api_key.startswith("AQ.Ab8")
 
-    def analyse_paper(self, title: str, authors: str, full_text: str, model: str = "gemini-2.5-flash") -> Dict[str, Any]:
+    def analyse_paper(
+        self, 
+        title: str, 
+        authors: str, 
+        full_text: str, 
+        model: str = "gemini-2.5-flash",
+        focus: str = "standard",
+        temperature: float = 0.2
+    ) -> Dict[str, Any]:
         """Generates a structured PhD-level analysis of the academic paper."""
         model = model.strip()
         
+        focus_instruction = ""
+        if focus == "methodology":
+            focus_instruction = "Focus heavily on extracting and describing the experimental methodology, mathematical formulations, system design, and datasets used."
+        elif focus == "limitations":
+            focus_instruction = "Focus heavily on performing a rigorous critique, identifying key limitations, core assumptions, and threats to validity."
+        elif focus == "future":
+            focus_instruction = "Focus heavily on identifying potential future extensions, research directions, and open problems building on this paper."
+        else:
+            focus_instruction = "Provide a balanced, high-quality PhD-level critique and overview covering all sections."
+
         # 1. Gemini Client path
         if model == "gemini" or model.startswith("gemini-") or model == "gemini-2.5-flash":
             if self.is_mock_mode():
@@ -68,6 +86,7 @@ Paper Text Content:
 {full_text[:80000]} # Safe truncation for token limits
 
 Provide a comprehensive, high-quality critique and summary. Focus on technical rigor and avoid superficial summaries.
+{focus_instruction}
 """
             # Prioritized order of models to try
             if model == "gemini":
@@ -127,7 +146,7 @@ Provide a comprehensive, high-quality critique and summary. Focus on technical r
                                 },
                                 "required": ["synopsis", "contributions", "methodology", "critical_review", "future_work", "keywords"]
                             },
-                            "temperature": 0.2
+                            "temperature": temperature
                         }
                     }
                     
@@ -204,14 +223,14 @@ You must return a valid JSON object matching the following structure:
                         "messages": [
                             {
                                 "role": "system",
-                                "content": f"You are an expert PhD academic reviewer. {schema_instruction}\nYou must respond with only a valid JSON object matching the schema, with no markdown code blocks, introductory text, or concluding text."
+                                "content": f"You are an expert PhD academic reviewer. {schema_instruction}\n{focus_instruction}\nYou must respond with only a valid JSON object matching the schema, with no markdown code blocks, introductory text, or concluding text."
                             },
                             {
                                 "role": "user",
                                 "content": f"Analyse this research paper:\nTitle: {title}\nAuthors: {authors}\n\nContent:\n{full_text[:45000]}"
                             }
                         ],
-                        "temperature": 0.2,
+                        "temperature": temperature,
                         "response_format": {"type": "json_object"}
                     }
                     

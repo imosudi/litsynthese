@@ -553,6 +553,42 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initialize with false so we don't flash on page load
     setApplicationTheme(state.currentTheme, false);
 
+    // Custom Synthesis Settings persistence
+    const extractionFocusSelect = document.getElementById("extraction-focus");
+    const citationFormatSelect = document.getElementById("citation-format");
+    const modelTemperatureInput = document.getElementById("model-temperature");
+    const temperatureValSpan = document.getElementById("temperature-val");
+
+    if (extractionFocusSelect) {
+        extractionFocusSelect.value = localStorage.getItem("extractionFocus") || "standard";
+        extractionFocusSelect.addEventListener("change", (e) => {
+            localStorage.setItem("extractionFocus", e.target.value);
+        });
+    }
+
+    if (citationFormatSelect) {
+        citationFormatSelect.value = localStorage.getItem("citationFormat") || "apa";
+        citationFormatSelect.addEventListener("change", (e) => {
+            localStorage.setItem("citationFormat", e.target.value);
+            if (state.selectedProjectId) {
+                loadComparisonMatrix();
+            }
+        });
+    }
+
+    if (modelTemperatureInput) {
+        const storedTemp = localStorage.getItem("modelTemperature") || "0.2";
+        modelTemperatureInput.value = storedTemp;
+        if (temperatureValSpan) temperatureValSpan.textContent = storedTemp;
+        
+        modelTemperatureInput.addEventListener("input", (e) => {
+            if (temperatureValSpan) temperatureValSpan.textContent = e.target.value;
+        });
+        modelTemperatureInput.addEventListener("change", (e) => {
+            localStorage.setItem("modelTemperature", e.target.value);
+        });
+    }
+
     // Theme Toggle Handler (Cycles through available themes)
     const availableThemes = ["dark", "light", "google", "samsung", "microsoft", "hyundai"];
     if (themeToggle) {
@@ -955,8 +991,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const formData = new FormData();
             formData.append("file", file);
 
+            const focus = localStorage.getItem("extractionFocus") || "standard";
+            const temp = localStorage.getItem("modelTemperature") || "0.2";
             const xhr = new XMLHttpRequest();
-            xhr.open("POST", `/api/project/${state.selectedProjectId}/upload?model=${state.selectedModelId}`, true);
+            xhr.open("POST", `/api/project/${state.selectedProjectId}/upload?model=${state.selectedModelId}&focus=${focus}&temperature=${temp}`, true);
 
             const token = localStorage.getItem("access_token");
             if (token) {
@@ -1335,7 +1373,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (emptyMatrixState) emptyMatrixState.classList.add("hidden");
 
-            const res = await fetch(`/api/project/${state.selectedProjectId}/matrix`);
+            const style = localStorage.getItem("citationFormat") || "apa";
+            const res = await fetch(`/api/project/${state.selectedProjectId}/matrix?style=${style}`);
 
             if (!res.ok) {
                 throw new Error("Failed to load comparison matrix.");
