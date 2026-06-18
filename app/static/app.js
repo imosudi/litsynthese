@@ -132,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const saveProfileBtn = document.getElementById("save-profile-btn");
     const profileInfoView = document.getElementById("profile-info-view");
     const profileInfoForm = document.getElementById("profile-info-form");
-    const logoutBtn = document.getElementById("logout-btn");
+    const logoutBtns = document.querySelectorAll(".logout-btn");
 
     let isRegisterMode = false;
 
@@ -514,11 +514,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => {
+    logoutBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
             logout();
         });
-    }
+    });
 
     // Initialise Theme and Persistence
     function setApplicationTheme(themeVal, triggerFlash = false) {
