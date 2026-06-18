@@ -95,4 +95,22 @@
             </div>
         </aside>
     </div>
+
+    <!-- Processing Overlay Modal -->
+    <div id="processing-overlay" class="processing-overlay hidden">
+        <div class="processing-card">
+            <div class="spinner-container">
+                <div class="spinner-outer"></div>
+                <div class="spinner-inner"></div>
+            </div>
+            <h3 id="overlay-title">Processing Papers</h3>
+            <p id="overlay-subtitle">Uploading and analyzing your literature with AI...</p>
+            <div class="overlay-progress-wrapper">
+                <div class="overlay-progress-bar-bg">
+                    <div id="overlay-progress-bar" class="overlay-progress-bar" style="width: 0%;"></div>
+                </div>
+                <span id="overlay-progress-text">0%</span>
+            </div>
+        </div>
+    </div>
 {% endblock %}

@@ -925,6 +925,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         progressContainer.classList.remove("hidden");
         
+        const overlay = document.getElementById("processing-overlay");
+        const overlayTitle = document.getElementById("overlay-title");
+        const overlaySubtitle = document.getElementById("overlay-subtitle");
+        const overlayProgressBar = document.getElementById("overlay-progress-bar");
+        const overlayProgressText = document.getElementById("overlay-progress-text");
+
+        if (overlay) {
+            overlay.classList.remove("hidden");
+            overlay.offsetWidth; // force reflow
+            overlay.classList.add("show");
+        }
+
         let successCount = 0;
         let lastUploadedPaperId = null;
         const errors = [];
@@ -937,11 +949,21 @@ document.addEventListener("DOMContentLoaded", () => {
             progressBar.style.width = "0%";
             progressStatus.textContent = `[${fileNum}/${totalFiles}] Uploading ${file.name}...`;
             
+            if (overlayTitle) overlayTitle.textContent = `Uploading Paper ${fileNum} of ${totalFiles}`;
+            if (overlaySubtitle) overlaySubtitle.textContent = `Uploading "${file.name}"...`;
+            if (overlayProgressBar) overlayProgressBar.style.width = "0%";
+            if (overlayProgressText) overlayProgressText.textContent = "0%";
+            
             try {
                 const uploadedPaper = await uploadSingleFile(file, (percent) => {
                     progressBar.style.width = `${percent}%`;
+                    if (overlayProgressBar) overlayProgressBar.style.width = `${percent}%`;
+                    if (overlayProgressText) overlayProgressText.textContent = `${percent}%`;
+                    
                     if (percent === 100) {
                         progressStatus.textContent = `[${fileNum}/${totalFiles}] Analysing ${file.name}...`;
+                        if (overlayTitle) overlayTitle.textContent = `Analyzing Paper ${fileNum} of ${totalFiles}`;
+                        if (overlaySubtitle) overlaySubtitle.textContent = `Extracting key contributions, methodology, and critique for "${file.name}" using AI...`;
                     } else {
                         progressStatus.textContent = `[${fileNum}/${totalFiles}] Uploading ${file.name} (${percent}%)...`;
                     }
@@ -953,6 +975,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error(`Failed to upload ${file.name}:`, err);
                 errors.push(`${file.name}: ${err.message || err}`);
             }
+        }
+
+        if (overlay) {
+            overlay.classList.remove("show");
+            setTimeout(() => {
+                overlay.classList.add("hidden");
+            }, 350);
         }
 
         if (errors.length > 0) {
